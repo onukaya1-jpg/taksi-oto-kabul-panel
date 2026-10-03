@@ -35,6 +35,36 @@ from app.license_backup import backup_licenses_to_github
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
+def _taxi_stats(status) -> dict:
+    if status is None:
+        return {
+            "accepts": 0,
+            "skips": 0,
+            "below_min": 0,
+            "above_max": 0,
+            "too_far": 0,
+            "other_skips": 0,
+            "accepted_total": 0,
+            "last_amount": 0,
+            "uptime_seconds": 0,
+        }
+    skips = int(status.items_collected or 0)
+    below = int(status.death_count or 0)
+    above = int(status.potions_used or 0)
+    far = int(status.pos_y or 0)
+    return {
+        "accepts": int(status.mobs_killed or 0),
+        "skips": skips,
+        "below_min": below,
+        "above_max": above,
+        "too_far": far,
+        "other_skips": max(0, skips - below - above - far),
+        "accepted_total": int(status.hp or 0),
+        "last_amount": int(status.max_hp or 0),
+        "uptime_seconds": int(status.uptime_seconds or 0),
+    }
+
+
 async def _auto_backup(db: AsyncSession):
     """Fire-and-forget backup after license changes. Never raises."""
     try:
@@ -138,6 +168,13 @@ class LicenseDetail(BaseModel):
     notes: Optional[str] = None
     accepts: int = 0
     skips: int = 0
+    below_min: int = 0
+    above_max: int = 0
+    too_far: int = 0
+    other_skips: int = 0
+    accepted_total: int = 0
+    last_amount: int = 0
+    uptime_seconds: int = 0
     devices: list[dict] = []
 
 
@@ -360,8 +397,21 @@ async def list_licenses(
                 "last_seen_at": lic.last_seen_at.isoformat() if lic.last_seen_at else None,
                 "last_ip": lic.last_ip,
                 "max_devices": lic.max_devices,
-                "accepts": int(status_by_hwid[lic.hwid].mobs_killed or 0) if lic.hwid and lic.hwid in status_by_hwid and (lic.product or "") == "taksi" else 0,
-                "skips": int(status_by_hwid[lic.hwid].items_collected or 0) if lic.hwid and lic.hwid in status_by_hwid and (lic.product or "") == "taksi" else 0,
+                **(
+                    _taxi_stats(status_by_hwid.get(lic.hwid))
+                    if (lic.product or "") == "taksi"
+                    else {
+                        "accepts": 0,
+                        "skips": 0,
+                        "below_min": 0,
+                        "above_max": 0,
+                        "too_far": 0,
+                        "other_skips": 0,
+                        "accepted_total": 0,
+                        "last_amount": 0,
+                        "uptime_seconds": 0,
+                    }
+                ),
                 "is_online": taxi_online(lic) if (lic.product or "") == "taksi" else bool(
                     lic.is_active and not lic.is_revoked
                     and lic.last_seen_at
@@ -460,8 +510,6 @@ async def get_license(
         last_ip=lic.last_ip,
         max_devices=lic.max_devices,
         notes=lic.notes,
-        accepts=int(ride.mobs_killed or 0) if ride else 0,
-        skips=int(ride.items_collected or 0) if ride else 0,
         devices=[
             {
                 "id": d.id,
@@ -473,6 +521,7 @@ async def get_license(
             }
             for d in devices
         ],
+        **_taxi_stats(ride if (lic.product or "") == "taksi" else None),
     )
 
 

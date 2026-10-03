@@ -779,13 +779,13 @@
         <!-- ═══ Online Users & Bot Control Page ═══ -->
         <div class="page" id="page-online" style="display:none">
             <div class="page-header">
-                <h2>🟢 Bot Kontrol Paneli</h2>
+                <h2>🟢 Çevrimiçi telefonlar</h2>
                 <span id="online-count-badge" class="badge badge-green" style="font-size:13px;"></span>
             </div>
 
             <!-- Tabs -->
             <div class="online-tabs">
-                <button class="online-tab active" onclick="switchOnlineTab('users')">🎮 Çevrimiçi Kullanıcılar</button>
+                <button class="online-tab active" onclick="switchOnlineTab('users')">🚕 Çevrimiçi telefonlar</button>
                 <button class="online-tab" onclick="switchOnlineTab('sessions')">📋 Oturum Geçmişi</button>
             </div>
 
@@ -793,8 +793,6 @@
             <div id="online-tab-users">
                 <div class="online-toolbar">
                     <button class="btn btn-primary btn-sm" onclick="loadOnlineUsers()">↻ Yenile</button>
-                    <button class="btn btn-danger btn-sm" onclick="confirmStopAll()">⛔ Tüm Botları Durdur</button>
-                    <button class="btn btn-ghost btn-sm" onclick="openBroadcastModal()">📢 Toplu Mesaj</button>
                 </div>
                 <div id="bot-cards-container" class="bot-cards-grid">
                     <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text2);"><div class="spinner"></div> Yükleniyor...</div>
@@ -812,7 +810,7 @@
                         <thead>
                             <tr>
                                 <th>HWID</th>
-                                <th>Karakter</th>
+                                <th>Müşteri</th>
                                 <th>Başlangıç</th>
                                 <th>Bitiş</th>
                                 <th>Süre</th>
@@ -1039,7 +1037,7 @@ async function loadLicenses() {
                 <td>${lic.customer_name || '—'}</td>
                 <td><span class="badge badge-gray">${lic.product === 'taksi' ? 'Taksi' : 'GameStore'}</span> <span class="badge badge-${lic.plan === 'admin' ? 'red' : lic.plan === 'lifetime' ? 'purple' : lic.plan === 'monthly' ? 'green' : lic.plan === 'weekly' ? 'yellow' : lic.plan === 'daily' ? 'blue' : lic.plan === 'hourly' ? 'cyan' : lic.plan === 'minute' ? 'pink' : 'green'}">${lic.plan === 'minute' ? 'Dakikalık' : lic.plan === 'hourly' ? 'Saatlik' : lic.plan === 'daily' ? 'Günlük' : lic.plan === 'weekly' ? 'Haftalık' : lic.plan === 'monthly' ? 'Aylık' : lic.plan === 'custom' ? 'Özel' : lic.plan === 'lifetime' ? 'Lifetime' : lic.plan === 'admin' ? 'Admin' : lic.plan}</span></td>
                 <td>${getStatusBadge(lic)}</td>
-                <td style="font-size:12px;">${lic.product === 'taksi' ? `${lic.accepts || 0} kabul · ${lic.skips || 0} atlandı` : '—'}</td>
+                <td style="font-size:12px;">${taxiListCell(lic)}</td>
                 <td style="font-size:11px; color:var(--text2);">${lic.hwid || '—'}</td>
                 <td style="font-size:12px;">${formatDate(lic.created_at)}</td>
                 <td style="font-size:12px;">${formatDate(lic.expires_at)}</td>
@@ -1099,7 +1097,7 @@ async function viewLicense(id) {
         document.getElementById('detail-title').textContent = `🔑 ${lic.license_key}`;
 
         document.getElementById('detail-grid').innerHTML = `
-            <div class="detail-item"><div class="label">Yolculuk</div><div class="value">${lic.product === 'taksi' ? `${lic.accepts || 0} kabul · ${lic.skips || 0} atlandı` : '—'}</div></div>
+            ${taxiDetailGrid(lic)}
             <div class="detail-item"><div class="label">Müşteri</div><div class="value">${lic.customer_name || '—'}</div></div>
             <div class="detail-item"><div class="label">Uygulama</div><div class="value">${lic.product === 'taksi' ? 'Taksi Oto Kabul' : 'GameStore'}</div></div>
             <div class="detail-item"><div class="label">Plan</div><div class="value">${lic.plan}</div></div>
@@ -1371,7 +1369,76 @@ function getStateLabel(state) {
     return map[state] || state || 'Bilinmiyor';
 }
 
+function taxiMoney(n) {
+    return `${(Number(n) || 0).toLocaleString('tr-TR')} ₺`;
+}
+
+function taxiListCell(lic) {
+    if (lic.product !== 'taksi') return '—';
+    return `${lic.accepts || 0} kabul · ${lic.below_min || 0} alt sınır<br><span style="color:var(--text2)">${taxiMoney(lic.accepted_total)} · ${formatDuration(lic.uptime_seconds || 0)}</span>`;
+}
+
+function taxiDetailGrid(lic) {
+    if (lic.product !== 'taksi') return '';
+    return `
+        <div class="detail-item"><div class="label">Kabul edilen</div><div class="value">${lic.accepts || 0}</div></div>
+        <div class="detail-item"><div class="label">Alt sınırın altı</div><div class="value">${lic.below_min || 0}</div></div>
+        <div class="detail-item"><div class="label">Üst sınırın üstü</div><div class="value">${lic.above_max || 0}</div></div>
+        <div class="detail-item"><div class="label">Mesafe uzak</div><div class="value">${lic.too_far || 0}</div></div>
+        <div class="detail-item"><div class="label">Diğer atlanan</div><div class="value">${lic.other_skips || 0}</div></div>
+        <div class="detail-item"><div class="label">Toplam atlanan</div><div class="value">${lic.skips || 0}</div></div>
+        <div class="detail-item"><div class="label">Kabul tutarı</div><div class="value">${taxiMoney(lic.accepted_total)}</div></div>
+        <div class="detail-item"><div class="label">Son yolculuk</div><div class="value">${taxiMoney(lic.last_amount)}</div></div>
+        <div class="detail-item"><div class="label">Çalışır süre</div><div class="value">${formatDuration(lic.uptime_seconds || 0)}</div></div>
+    `;
+}
+
 function renderBotCard(u) {
+    if ((u.product || 'taksi') === 'taksi') return renderTaxiCard(u);
+    return renderGameCard(u);
+}
+
+function renderTaxiCard(u) {
+    const bs = u.bot_status || {};
+    const running = !!bs.running;
+    const name = u.customer_name || bs.character_name || 'Müşteri yok';
+    const hwid = u.device_hwid || '';
+    const shortHwid = hwid.length > 16 ? hwid.substring(0, 16) + '…' : hwid;
+    const stat = (value, label) => `<div class="mini-stat"><div class="val">${value}</div><div class="lbl">${label}</div></div>`;
+
+    return `
+    <div class="bot-card">
+        <div class="bot-card-header">
+            <div>
+                <div class="char-name">🚕 ${name}</div>
+                <div class="char-key" title="${u.license_key}" onclick="copyText('${u.license_key}')" style="cursor:pointer;">${u.license_key}</div>
+            </div>
+            <div style="text-align:right;">
+                <span class="badge badge-purple" style="font-size:10px;">${u.plan}</span><br>
+                <span class="bot-state-badge ${running ? 'running' : 'stopped'}">${running ? '● Çalışıyor' : '○ Durdu'}</span>
+            </div>
+        </div>
+        <div class="mini-stats">
+            ${stat(bs.accepts || 0, 'Kabul')}
+            ${stat(bs.below_min || 0, 'Alt sınır')}
+            ${stat(bs.above_max || 0, 'Üst sınır')}
+            ${stat(bs.too_far || 0, 'Uzak')}
+            ${stat(bs.other_skips || 0, 'Diğer')}
+            ${stat(bs.skips || 0, 'Atlanan')}
+        </div>
+        <div class="card-meta">
+            <span>Tutar: ${taxiMoney(bs.accepted_total)}</span>
+            <span>Son: ${taxiMoney(bs.last_amount)}</span>
+            <span>Çalışır: ${formatDuration(bs.uptime_seconds || 0)}</span>
+        </div>
+        <div class="card-meta">
+            <span title="${hwid}">HWID: ${shortHwid}</span>
+            <span>IP: ${u.ip_address || '—'}</span>
+        </div>
+    </div>`;
+}
+
+function renderGameCard(u) {
     const bs = u.bot_status;
     const hasBot = bs !== null;
     const running = hasBot && bs.running;

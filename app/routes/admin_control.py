@@ -28,7 +28,7 @@ from app.database import get_db
 from app.models import (
     License, Device, OnlineSession, BotStatus, AdminCommandQueue,
 )
-from app.routes.admin import verify_admin_key
+from app.routes.admin import verify_admin_key, _taxi_stats
 from app.settings import get_settings
 import hashlib
 import hmac
@@ -96,8 +96,9 @@ async def get_online_users(
     db: AsyncSession = Depends(get_db),
 ):
     """List all currently online users with their bot status."""
-    # Online = last_seen_at within 30 seconds
-    threshold = datetime.now(timezone.utc) - timedelta(seconds=30)
+    now = datetime.now(timezone.utc)
+    threshold = now - timedelta(seconds=30)
+    taxi_cutoff = now - timedelta(seconds=25)
 
     result = await db.execute(
         select(Device, License).join(License, Device.license_id == License.id).where(
@@ -110,23 +111,31 @@ async def get_online_users(
 
     users = []
     for device, lic in rows:
-        # Get bot status if available
         bs_result = await db.execute(
             select(BotStatus).where(BotStatus.device_hwid == device.device_hwid)
         )
         bs = bs_result.scalar_one_or_none()
+        product = lic.product or "gamestore"
+        if product == "taksi":
+            if not bs or not bs.bot_running or not bs.last_updated:
+                continue
+            if _make_aware(bs.last_updated) < taxi_cutoff:
+                continue
 
         user_info = {
             "device_hwid": device.device_hwid,
             "license_key": lic.license_key,
             "license_id": lic.id,
             "plan": lic.plan,
+            "product": product,
+            "customer_name": lic.customer_name or "",
             "ip_address": device.last_ip or "",
             "last_seen": _make_aware(device.last_seen_at).isoformat() if device.last_seen_at else None,
-            "online_seconds": int((datetime.now(timezone.utc) - _make_aware(device.last_seen_at)).total_seconds()) if device.last_seen_at else 0,
+            "online_seconds": int((now - _make_aware(device.last_seen_at)).total_seconds()) if device.last_seen_at else 0,
         }
 
         if bs:
+            stats = _taxi_stats(bs) if product == "taksi" else {}
             user_info["bot_status"] = {
                 "running": bs.bot_running,
                 "game_connected": bs.game_connected,
@@ -144,6 +153,7 @@ async def get_online_users(
                 "pos_x": bs.pos_x,
                 "pos_y": bs.pos_y,
                 "last_updated": _make_aware(bs.last_updated).isoformat() if bs.last_updated else None,
+                **stats,
             }
         else:
             user_info["bot_status"] = None

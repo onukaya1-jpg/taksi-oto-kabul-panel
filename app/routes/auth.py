@@ -20,6 +20,13 @@ from app.audit import AuditLogger, AuditEventType
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _as_int(value) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 # ---------- Request / Response Schemas ----------
 
 class DeviceRegisterRequest(BaseModel):
@@ -233,52 +240,37 @@ async def heartbeat(
                 select(BotStatus).where(BotStatus.device_hwid == body.device_hwid)
             )
             existing = result.scalar_one_or_none()
-            if existing:
-                existing.license_id = lic.id
-                existing.bot_running = bs.get("running", False)
-                existing.game_connected = bs.get("game_connected", False)
-                existing.character_name = bs.get("character_name", "")
-                existing.bot_state = bs.get("state", "idle")
-                if "accepts" in bs:
-                    existing.mobs_killed = int(bs.get("accepts") or 0)
-                else:
-                    existing.mobs_killed = bs.get("mobs_killed", 0)
-                if "skips" in bs:
-                    existing.items_collected = int(bs.get("skips") or 0)
-                else:
-                    existing.items_collected = bs.get("items_collected", 0)
-                existing.death_count = bs.get("death_count", 0)
-                existing.potions_used = bs.get("potions_used", 0)
-                existing.uptime_seconds = bs.get("uptime_seconds", 0)
-                existing.hp = bs.get("hp", 0)
-                existing.max_hp = bs.get("max_hp", 0)
-                existing.mp = bs.get("mp", 0)
-                existing.max_mp = bs.get("max_mp", 0)
-                existing.pos_x = bs.get("pos_x", 0)
-                existing.pos_y = bs.get("pos_y", 0)
-                existing.last_updated = now
+            if existing is None:
+                existing = BotStatus(license_id=lic.id, device_hwid=body.device_hwid)
+                db.add(existing)
+            existing.license_id = lic.id
+            existing.bot_running = bool(bs.get("running", False))
+            existing.game_connected = bool(bs.get("game_connected", False))
+            existing.character_name = str(bs.get("character_name") or "")[:64]
+            existing.bot_state = str(bs.get("state") or "idle")[:32]
+            if "accepts" in bs:
+                existing.mobs_killed = _as_int(bs.get("accepts"))
+                existing.items_collected = _as_int(bs.get("skips"))
+                existing.death_count = _as_int(bs.get("below_min"))
+                existing.potions_used = _as_int(bs.get("above_max"))
+                existing.pos_y = _as_int(bs.get("too_far"))
+                existing.hp = _as_int(bs.get("accepted_total"))
+                existing.max_hp = _as_int(bs.get("last_amount"))
+                existing.mp = _as_int(bs.get("other_skips"))
+                existing.uptime_seconds = _as_int(bs.get("uptime_seconds"))
             else:
-                new_status = BotStatus(
-                    license_id=lic.id,
-                    device_hwid=body.device_hwid,
-                    bot_running=bs.get("running", False),
-                    game_connected=bs.get("game_connected", False),
-                    character_name=bs.get("character_name", ""),
-                    bot_state=bs.get("state", "idle"),
-                    mobs_killed=int(bs.get("accepts") or 0) if "accepts" in bs else bs.get("mobs_killed", 0),
-                    items_collected=int(bs.get("skips") or 0) if "skips" in bs else bs.get("items_collected", 0),
-                    death_count=bs.get("death_count", 0),
-                    potions_used=bs.get("potions_used", 0),
-                    uptime_seconds=bs.get("uptime_seconds", 0),
-                    hp=bs.get("hp", 0),
-                    max_hp=bs.get("max_hp", 0),
-                    mp=bs.get("mp", 0),
-                    max_mp=bs.get("max_mp", 0),
-                    pos_x=bs.get("pos_x", 0),
-                    pos_y=bs.get("pos_y", 0),
-                    last_updated=now,
-                )
-                db.add(new_status)
+                existing.mobs_killed = _as_int(bs.get("mobs_killed"))
+                existing.items_collected = _as_int(bs.get("items_collected"))
+                existing.death_count = _as_int(bs.get("death_count"))
+                existing.potions_used = _as_int(bs.get("potions_used"))
+                existing.uptime_seconds = _as_int(bs.get("uptime_seconds"))
+                existing.hp = _as_int(bs.get("hp"))
+                existing.max_hp = _as_int(bs.get("max_hp"))
+                existing.mp = _as_int(bs.get("mp"))
+                existing.max_mp = _as_int(bs.get("max_mp"))
+                existing.pos_x = _as_int(bs.get("pos_x"))
+                existing.pos_y = _as_int(bs.get("pos_y"))
+            existing.last_updated = now
 
         # --- Fetch pending admin commands ---
         pending_commands = []
