@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update, delete
 
 from app.database import get_db
-from app.models import License, Device, TokenLog, SecurityEvent
+from app.models import License, Device, TokenLog, SecurityEvent, BotStatus
 from app.settings import get_settings
 from app.license_backup import backup_licenses_to_github
 
@@ -136,6 +136,8 @@ class LicenseDetail(BaseModel):
     last_ip: Optional[str] = None
     max_devices: int
     notes: Optional[str] = None
+    accepts: int = 0
+    skips: int = 0
     devices: list[dict] = []
 
 
@@ -303,6 +305,21 @@ async def list_licenses(
 
     result = await db.execute(query)
     licenses = result.scalars().all()
+    hwids = [lic.hwid for lic in licenses if lic.hwid]
+    status_by_hwid = {}
+    if hwids:
+        from app.models import BotStatus
+        status_rows = (
+            await db.execute(select(BotStatus).where(BotStatus.device_hwid.in_(hwids)))
+        ).scalars().all()
+        status_by_hwid = {row.device_hwid: row for row in status_rows}
+    taxi_cutoff = datetime.now(timezone.utc) - timedelta(seconds=25)
+
+    def taxi_online(lic) -> bool:
+        status = status_by_hwid.get(lic.hwid)
+        if not status or not status.bot_running or not status.last_updated:
+            return False
+        return _make_aware(status.last_updated) >= taxi_cutoff
 
     # Count total (with same filters)
     count_q = select(func.count(License.id))
@@ -343,7 +360,9 @@ async def list_licenses(
                 "last_seen_at": lic.last_seen_at.isoformat() if lic.last_seen_at else None,
                 "last_ip": lic.last_ip,
                 "max_devices": lic.max_devices,
-                "is_online": bool(
+                "accepts": int(status_by_hwid[lic.hwid].mobs_killed or 0) if lic.hwid and lic.hwid in status_by_hwid and (lic.product or "") == "taksi" else 0,
+                "skips": int(status_by_hwid[lic.hwid].items_collected or 0) if lic.hwid and lic.hwid in status_by_hwid and (lic.product or "") == "taksi" else 0,
+                "is_online": taxi_online(lic) if (lic.product or "") == "taksi" else bool(
                     lic.is_active and not lic.is_revoked
                     and lic.last_seen_at
                     and _make_aware(lic.last_seen_at) >= online_cutoff
@@ -417,6 +436,11 @@ async def get_license(
         select(Device).where(Device.license_id == lic.id)
     )
     devices = dev_result.scalars().all()
+    ride = None
+    if lic.hwid and (lic.product or "") == "taksi":
+        ride = (
+            await db.execute(select(BotStatus).where(BotStatus.device_hwid == lic.hwid))
+        ).scalar_one_or_none()
 
     return LicenseDetail(
         id=lic.id,
@@ -436,6 +460,8 @@ async def get_license(
         last_ip=lic.last_ip,
         max_devices=lic.max_devices,
         notes=lic.notes,
+        accepts=int(ride.mobs_killed or 0) if ride else 0,
+        skips=int(ride.items_collected or 0) if ride else 0,
         devices=[
             {
                 "id": d.id,

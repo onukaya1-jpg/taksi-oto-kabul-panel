@@ -621,6 +621,7 @@
                             <th>Müşteri</th>
                             <th>Plan</th>
                             <th>Durum</th>
+                            <th>Yolculuk</th>
                             <th>HWID</th>
                             <th>Oluşturulma</th>
                             <th>Bitiş</th>
@@ -629,7 +630,7 @@
                         </tr>
                     </thead>
                     <tbody id="licenses-tbody">
-                        <tr><td colspan="10" class="empty-state"><div class="spinner"></div> Yükleniyor...</td></tr>
+                        <tr><td colspan="11" class="empty-state"><div class="spinner"></div> Yükleniyor...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1012,7 +1013,7 @@ async function loadLicenses() {
     const activeOnly = document.getElementById('filter-active').checked;
     const search = document.getElementById('license-search').value.trim();
     const tbody = document.getElementById('licenses-tbody');
-    tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><div class="spinner"></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><div class="spinner"></div></td></tr>';
 
     try {
         let url = `/admin/licenses?page=${currentPage}&per_page=50`;
@@ -1024,7 +1025,7 @@ async function loadLicenses() {
 
         const data = await api('GET', url);
         if (!data.licenses.length) {
-            tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><div class="icon">🔑</div>Henüz lisans yok</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><div class="icon">🔑</div>Henüz lisans yok</td></tr>';
             return;
         }
 
@@ -1038,6 +1039,7 @@ async function loadLicenses() {
                 <td>${lic.customer_name || '—'}</td>
                 <td><span class="badge badge-gray">${lic.product === 'taksi' ? 'Taksi' : 'GameStore'}</span> <span class="badge badge-${lic.plan === 'admin' ? 'red' : lic.plan === 'lifetime' ? 'purple' : lic.plan === 'monthly' ? 'green' : lic.plan === 'weekly' ? 'yellow' : lic.plan === 'daily' ? 'blue' : lic.plan === 'hourly' ? 'cyan' : lic.plan === 'minute' ? 'pink' : 'green'}">${lic.plan === 'minute' ? 'Dakikalık' : lic.plan === 'hourly' ? 'Saatlik' : lic.plan === 'daily' ? 'Günlük' : lic.plan === 'weekly' ? 'Haftalık' : lic.plan === 'monthly' ? 'Aylık' : lic.plan === 'custom' ? 'Özel' : lic.plan === 'lifetime' ? 'Lifetime' : lic.plan === 'admin' ? 'Admin' : lic.plan}</span></td>
                 <td>${getStatusBadge(lic)}</td>
+                <td style="font-size:12px;">${lic.product === 'taksi' ? `${lic.accepts || 0} kabul · ${lic.skips || 0} atlandı` : '—'}</td>
                 <td style="font-size:11px; color:var(--text2);">${lic.hwid || '—'}</td>
                 <td style="font-size:12px;">${formatDate(lic.created_at)}</td>
                 <td style="font-size:12px;">${formatDate(lic.expires_at)}</td>
@@ -1061,7 +1063,7 @@ async function loadLicenses() {
             paginationEl.innerHTML = '';
         }
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="10" class="empty-state">❌ Hata: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="empty-state">❌ Hata: ${e.message}</td></tr>`;
     }
 
     // Auto-refresh licenses every 15 seconds (for real-time online tracking)
@@ -1097,6 +1099,7 @@ async function viewLicense(id) {
         document.getElementById('detail-title').textContent = `🔑 ${lic.license_key}`;
 
         document.getElementById('detail-grid').innerHTML = `
+            <div class="detail-item"><div class="label">Yolculuk</div><div class="value">${lic.product === 'taksi' ? `${lic.accepts || 0} kabul · ${lic.skips || 0} atlandı` : '—'}</div></div>
             <div class="detail-item"><div class="label">Müşteri</div><div class="value">${lic.customer_name || '—'}</div></div>
             <div class="detail-item"><div class="label">Uygulama</div><div class="value">${lic.product === 'taksi' ? 'Taksi Oto Kabul' : 'GameStore'}</div></div>
             <div class="detail-item"><div class="label">Plan</div><div class="value">${lic.plan}</div></div>

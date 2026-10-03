@@ -239,8 +239,14 @@ async def heartbeat(
                 existing.game_connected = bs.get("game_connected", False)
                 existing.character_name = bs.get("character_name", "")
                 existing.bot_state = bs.get("state", "idle")
-                existing.mobs_killed = bs.get("mobs_killed", 0)
-                existing.items_collected = bs.get("items_collected", 0)
+                if "accepts" in bs:
+                    existing.mobs_killed = int(bs.get("accepts") or 0)
+                else:
+                    existing.mobs_killed = bs.get("mobs_killed", 0)
+                if "skips" in bs:
+                    existing.items_collected = int(bs.get("skips") or 0)
+                else:
+                    existing.items_collected = bs.get("items_collected", 0)
                 existing.death_count = bs.get("death_count", 0)
                 existing.potions_used = bs.get("potions_used", 0)
                 existing.uptime_seconds = bs.get("uptime_seconds", 0)
@@ -259,8 +265,8 @@ async def heartbeat(
                     game_connected=bs.get("game_connected", False),
                     character_name=bs.get("character_name", ""),
                     bot_state=bs.get("state", "idle"),
-                    mobs_killed=bs.get("mobs_killed", 0),
-                    items_collected=bs.get("items_collected", 0),
+                    mobs_killed=int(bs.get("accepts") or 0) if "accepts" in bs else bs.get("mobs_killed", 0),
+                    items_collected=int(bs.get("skips") or 0) if "skips" in bs else bs.get("items_collected", 0),
                     death_count=bs.get("death_count", 0),
                     potions_used=bs.get("potions_used", 0),
                     uptime_seconds=bs.get("uptime_seconds", 0),
