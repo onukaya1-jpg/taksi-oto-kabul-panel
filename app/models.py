@@ -24,6 +24,7 @@ class License(Base):
     license_key = Column(String(32), unique=True, nullable=False, index=True)
     plan = Column(String(32), nullable=False, default="monthly")  # hourly | minute | daily | weekly | monthly | custom | lifetime | admin
     product = Column(String(32), nullable=False, default="gamestore", server_default="gamestore")  # gamestore | taksi
+    customer_name = Column(String(200), nullable=True)
     hwid = Column(String(64), nullable=True)  # bound device HWID (null = unbound)
     is_active = Column(Boolean, default=True, nullable=False)
     is_revoked = Column(Boolean, default=False, nullable=False)

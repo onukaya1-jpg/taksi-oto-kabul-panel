@@ -95,6 +95,7 @@ async def init_db() -> None:
             ("licenses", "duration_days", "INTEGER"),
             ("licenses", "duration_minutes", "INTEGER"),
             ("licenses", "product", "VARCHAR(32) NOT NULL DEFAULT 'gamestore'"),
+            ("licenses", "customer_name", "VARCHAR(200)"),
             ("admin_commands", "signature", "VARCHAR(64)"),
         ]
         for table, column, col_type in migrations:
@@ -104,6 +105,16 @@ async def init_db() -> None:
                 )
             except Exception:
                 pass  # column already exists or DB doesn't support IF NOT EXISTS
+
+        try:
+            await conn.execute(
+                text(
+                    "UPDATE licenses SET customer_name = split_part(notes, ': ', 1) "
+                    "WHERE COALESCE(customer_name, '') = '' AND notes LIKE '%: %'"
+                )
+            )
+        except Exception:
+            pass
 
         # Lazy expiration fix: clear expires_at for keys that were never activated
         # These got expires_at from old imports before lazy system existed

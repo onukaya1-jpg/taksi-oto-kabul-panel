@@ -264,6 +264,7 @@ class LicenseService:
             "license_plan": lic.plan,
             "scope": scope,
             "license_expires_at": lic.expires_at.isoformat() if lic.expires_at else None,
+            "customer_name": lic.customer_name or "",
             "server_time": datetime.now(timezone.utc).isoformat(),
         }
 

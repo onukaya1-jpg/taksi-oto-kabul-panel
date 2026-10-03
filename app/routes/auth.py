@@ -59,6 +59,7 @@ class HeartbeatResponse(BaseModel):
     admin_message: str | None = None
     license_expires_at: str | None = None
     license_plan: str | None = None
+    customer_name: str | None = None
 
 class LogoutRequest(BaseModel):
     token: str = Field(..., min_length=32)
@@ -316,6 +317,7 @@ async def heartbeat(
             admin_message=admin_message,
             license_expires_at=license_expires,
             license_plan=lic.plan,
+            customer_name=lic.customer_name or "",
         )
     except (ValueError, PermissionError):
         return JSONResponse(status_code=401, content={"error": "INVALID_TOKEN"})

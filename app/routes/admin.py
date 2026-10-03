@@ -123,6 +123,7 @@ class LicenseDetail(BaseModel):
     license_key: str
     plan: str
     product: str = "gamestore"
+    customer_name: str = ""
     hwid: Optional[str] = None
     is_active: bool
     is_revoked: bool
@@ -223,7 +224,8 @@ async def create_license(
         duration_days=actual_days,
         duration_minutes=actual_minutes,
         max_devices=body.max_devices,
-        notes=f"{body.customer_name}: {body.notes}" if body.customer_name else body.notes,
+        customer_name=body.customer_name.strip() or None,
+        notes=body.notes,
     )
     db.add(lic)
     await db.flush()
@@ -290,6 +292,7 @@ async def list_licenses(
             or_(
                 License.license_key.ilike(term),
                 License.hwid.ilike(term),
+                License.customer_name.ilike(term),
                 License.notes.ilike(term),
             )
         )
@@ -315,6 +318,7 @@ async def list_licenses(
             or_(
                 License.license_key.ilike(term),
                 License.hwid.ilike(term),
+                License.customer_name.ilike(term),
                 License.notes.ilike(term),
             )
         )
@@ -327,6 +331,7 @@ async def list_licenses(
                 "license_key": lic.license_key,
                 "plan": lic.plan,
                 "product": lic.product or "gamestore",
+                "customer_name": lic.customer_name or "",
                 "is_active": lic.is_active,
                 "is_revoked": lic.is_revoked,
                 "hwid": lic.hwid[:12] + "..." if lic.hwid else None,
@@ -418,6 +423,7 @@ async def get_license(
         license_key=lic.license_key,
         plan=lic.plan,
         product=lic.product or "gamestore",
+        customer_name=lic.customer_name or "",
         hwid=lic.hwid,
         is_active=lic.is_active,
         is_revoked=lic.is_revoked,
