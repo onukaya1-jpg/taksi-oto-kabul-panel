@@ -26,6 +26,11 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg);
@@ -47,7 +52,7 @@
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 48px 40px;
-            width: 400px;
+            width: min(400px, calc(100vw - 32px));
             text-align: center;
             box-shadow: 0 20px 60px rgba(0,0,0,0.4);
         }
@@ -148,18 +153,32 @@
         .nav-item.active { background: var(--accent); color: white; }
         .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
 
+        .nav-logout {
+            margin-top: auto;
+            position: absolute;
+            bottom: 24px;
+            left: 16px;
+            right: 16px;
+        }
+
         .main {
             margin-left: 240px;
             padding: 32px;
             min-height: 100vh;
+            min-width: 0;
+            max-width: calc(100vw - 240px);
         }
 
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
             margin-bottom: 28px;
         }
+
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
         .page-header h2 { font-size: 22px; font-weight: 600; }
 
@@ -191,6 +210,65 @@
             border: 1px solid var(--border);
             border-radius: var(--radius);
             overflow: hidden;
+            max-width: 100%;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            max-width: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-wrap table {
+            width: max-content;
+            min-width: 100%;
+        }
+
+        .table-wrap th,
+        .table-wrap td { white-space: nowrap; }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .field {
+            padding: 8px 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+            max-width: 100%;
+        }
+
+        .field:focus { border-color: var(--accent); }
+        .field-grow { width: min(320px, 100%); flex: 1 1 220px; }
+
+        .create-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .detail-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
         .card-header {
@@ -288,8 +366,9 @@
             border: 1px solid var(--border);
             border-radius: 14px;
             padding: 32px;
-            width: 480px;
-            max-width: 90vw;
+            width: min(480px, calc(100vw - 24px));
+            max-height: calc(100vh - 24px);
+            overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
 
@@ -329,12 +408,15 @@
         /* ── Toast ── */
         .toast-container {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 12px;
+            left: 12px;
+            right: 12px;
             z-index: 2000;
             display: flex;
             flex-direction: column;
+            align-items: flex-end;
             gap: 8px;
+            pointer-events: none;
         }
 
         .toast {
@@ -343,7 +425,8 @@
             font-size: 13px;
             font-weight: 500;
             animation: slideIn 0.3s ease;
-            max-width: 400px;
+            width: min(400px, 100%);
+            pointer-events: auto;
         }
 
         .toast-success { background: rgba(0,184,148,0.9); color: white; }
@@ -383,16 +466,6 @@
         .severity-warning { color: var(--orange); }
         .severity-info { color: var(--blue); }
 
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .sidebar { width: 60px; padding: 16px 8px; }
-            .sidebar .logo { font-size: 0; }
-            .sidebar .logo::first-letter { font-size: 18px; }
-            .nav-item span:not(.icon) { display: none; }
-            .main { margin-left: 60px; padding: 20px; }
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-        }
-
         /* ── Loading ── */
         .spinner {
             display: inline-block;
@@ -428,6 +501,7 @@
             font-family: 'Consolas', 'Monaco', monospace;
             font-size: 13px;
             letter-spacing: 0.5px;
+            overflow-wrap: anywhere;
         }
 
         /* Bulk create result */
@@ -444,6 +518,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
             padding: 6px 0;
             border-bottom: 1px solid var(--border);
         }
@@ -457,13 +533,13 @@
         .online-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
         .online-toolbar .badge { font-size:13px; padding:6px 14px; }
 
-        .bot-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(370px, 1fr)); gap:16px; }
+        .bot-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(370px, 100%), 1fr)); gap:16px; }
 
-        .bot-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:18px; transition:border-color .2s; }
+        .bot-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:18px; transition:border-color .2s; min-width:0; }
         .bot-card:hover { border-color:var(--accent); }
         .bot-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-        .bot-card-header .char-name { font-size:15px; font-weight:600; color:var(--accent2); }
-        .bot-card-header .char-key { font-size:11px; color:var(--text2); font-family:monospace; margin-top:2px; }
+        .bot-card-header .char-name { font-size:15px; font-weight:600; color:var(--accent2); overflow-wrap:anywhere; }
+        .bot-card-header .char-key { font-size:11px; color:var(--text2); font-family:monospace; margin-top:2px; overflow-wrap:anywhere; }
         .bot-card-header .plan-badge { font-size:11px; }
 
         .bot-state-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:.3px; }
@@ -501,10 +577,77 @@
         .session-table { width:100%; }
         .session-active { color:var(--green); font-weight:600; }
 
-        @media (max-width: 768px) {
-            .bot-cards-grid { grid-template-columns:1fr; }
-            .mini-stats { grid-template-columns:repeat(2, 1fr); }
-            .online-toolbar { flex-direction:column; align-items:stretch; }
+        @media (max-width: 860px) {
+            .sidebar {
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                height: auto;
+                display: flex;
+                flex-direction: row;
+                align-items: stretch;
+                gap: 2px;
+                padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+                border-right: none;
+                border-top: 1px solid var(--border);
+                overflow-x: auto;
+            }
+            .sidebar .logo { display: none; }
+            .nav-item {
+                flex: 1 1 0;
+                flex-direction: column;
+                justify-content: center;
+                gap: 2px;
+                min-width: 0;
+                margin: 0;
+                padding: 8px 2px;
+                font-size: 10px;
+                text-align: center;
+            }
+            .nav-item span:not(.icon) {
+                display: block;
+                width: 100%;
+                line-height: 1.15;
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
+            .nav-item .icon { width: auto; font-size: 16px; }
+            .nav-logout { position: static; margin: 0; left: auto; right: auto; bottom: auto; }
+            .main {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 16px 12px calc(88px + env(safe-area-inset-bottom));
+            }
+            .page-header h2 { font-size: 18px; }
+            .header-actions, .header-actions .btn { width: 100%; }
+            .header-actions .btn { justify-content: center; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-card { padding: 14px; }
+            .stat-card .value { font-size: 22px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar .field, .filter-bar select, .filter-bar label, .field-grow { width: 100%; flex: 0 0 auto; }
+            .create-grid, .detail-grid { grid-template-columns: 1fr; }
+            .detail-head { align-items: flex-start; }
+            .detail-head h3 { overflow-wrap: anywhere; font-size: 16px; }
+            .detail-panel { padding: 16px; }
+            .login-box { padding: 32px 20px; }
+            .modal {
+                width: 100%;
+                max-width: calc(100vw - 16px);
+                padding: 20px;
+            }
+            .form-actions { flex-wrap: wrap; }
+            .form-actions .btn { flex: 1; justify-content: center; }
+            .bot-cards-grid { grid-template-columns: minmax(0, 1fr); }
+            .mini-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .mini-stat .lbl { overflow-wrap: anywhere; }
+            .online-tab { font-size: 12px; padding: 10px 8px; white-space: normal; }
+            .online-toolbar { flex-direction: column; align-items: stretch; }
+            .online-toolbar .field { width: 100%; }
+            .card-meta { gap: 8px; }
+            input, select, textarea { font-size: 16px; }
         }
     </style>
 </head>
@@ -549,7 +692,7 @@
             <span class="icon">🟢</span>
             <span>Çevrimiçi</span>
         </div>
-        <div class="nav-item" onclick="doLogout()" style="margin-top: auto; position: absolute; bottom: 24px; left: 16px; right: 16px;">
+        <div class="nav-item nav-logout" onclick="doLogout()">
             <span class="icon">🚪</span>
             <span>Çıkış</span>
         </div>
@@ -582,21 +725,21 @@
         <div class="page" id="page-licenses" style="display:none">
             <div class="page-header">
                 <h2>Lisans Yönetimi</h2>
-                <div style="display:flex; gap:8px;">
+                <div class="header-actions">
                     <button class="btn btn-ghost" onclick="loadLicenses()">↻ Yenile</button>
                     <button class="btn btn-primary" onclick="showPage('create')">+ Yeni Key</button>
                 </div>
             </div>
 
             <!-- Filters -->
-            <div style="display:flex; gap:12px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
-                <input type="text" id="license-search" placeholder="🔍 Lisans key, HWID veya not ile ara..." oninput="debouncedSearch()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; width:320px; outline:none; transition:border-color .2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-                <select id="filter-product" onchange="loadLicenses()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">
+            <div class="filter-bar">
+                <input class="field field-grow" type="text" id="license-search" placeholder="Lisans key, HWID veya not ile ara..." oninput="debouncedSearch()">
+                <select class="field" id="filter-product" onchange="loadLicenses()">
                     <option value="">Tüm Uygulamalar</option>
                     <option value="gamestore">GameStore</option>
                     <option value="taksi">Taksi Oto Kabul</option>
                 </select>
-                <select id="filter-plan" onchange="loadLicenses()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">
+                <select class="field" id="filter-plan" onchange="loadLicenses()">
                     <option value="">Tüm Planlar</option>
                     <option value="minute">Dakikalık</option>
                     <option value="hourly">Saatlik</option>
@@ -612,7 +755,7 @@
                 </label>
             </div>
 
-            <div class="card">
+            <div class="card table-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -636,17 +779,17 @@
             </div>
 
             <!-- Pagination -->
-            <div style="display:flex; justify-content:center; gap:8px; margin-top:16px;" id="pagination"></div>
+            <div class="pagination" id="pagination"></div>
 
             <!-- Detail Panel -->
             <div class="detail-panel" id="detail-panel">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div class="detail-head">
                     <h3 id="detail-title">Lisans Detayı</h3>
                     <button class="btn btn-ghost btn-sm" onclick="closeDetail()">✕ Kapat</button>
                 </div>
                 <div class="detail-grid" id="detail-grid"></div>
                 <h4 style="font-size:13px; color:var(--text2); margin-bottom:8px;">Bağlı Cihazlar</h4>
-                <div id="detail-devices"></div>
+                <div id="detail-devices" class="table-wrap"></div>
                 <div class="detail-actions" id="detail-actions" style="margin-top:16px;"></div>
             </div>
         </div>
@@ -657,7 +800,7 @@
                 <h2>Yeni Lisans Oluştur</h2>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+            <div class="create-grid">
                 <!-- Single Key -->
                 <div class="card" style="padding:24px;">
                     <h3 style="margin-bottom:20px;">🔑 Tek Key</h3>
@@ -748,8 +891,8 @@
         <div class="page" id="page-security" style="display:none">
             <div class="page-header">
                 <h2>Güvenlik Olayları</h2>
-                <div style="display:flex; gap:8px;">
-                    <select id="security-hours" onchange="loadSecurityEvents()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">
+                <div class="header-actions">
+                    <select class="field" id="security-hours" onchange="loadSecurityEvents()">
                         <option value="24">Son 24 Saat</option>
                         <option value="72">Son 3 Gün</option>
                         <option value="168">Son 7 Gün</option>
@@ -757,7 +900,7 @@
                     <button class="btn btn-ghost" onclick="loadSecurityEvents()">↻ Yenile</button>
                 </div>
             </div>
-            <div class="card">
+            <div class="card table-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -803,9 +946,9 @@
             <div id="online-tab-sessions" style="display:none">
                 <div class="online-toolbar">
                     <button class="btn btn-primary btn-sm" onclick="loadSessions()">↻ Yenile</button>
-                    <input type="text" id="session-hwid-filter" placeholder="HWID ile filtrele..." style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; width:280px;">
+                    <input class="field field-grow" type="text" id="session-hwid-filter" placeholder="HWID ile filtrele...">
                 </div>
-                <div class="card">
+                <div class="card table-wrap">
                     <table class="session-table">
                         <thead>
                             <tr>
