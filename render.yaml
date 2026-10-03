@@ -44,9 +44,9 @@ services:
       - key: MTLS_ENABLED
         value: "false"
       - key: RATE_LIMIT_PER_MINUTE
-        value: "30"
+        value: "120"
       - key: RATE_LIMIT_BURST
-        value: "10"
+        value: "40"
       - key: TOKEN_TTL_SECONDS
         value: "300"
       # --- License Seed (comma-separated keys to create on startup) ---

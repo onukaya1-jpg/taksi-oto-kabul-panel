@@ -30,6 +30,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         client_ip = request.client.host if request.client else "unknown"
 
+        if request.url.path in ("/health", "/health/ready", "/health/live", "/metrics"):
+            return await call_next(request)
+
         if not self.limiter.allow(client_ip):
             self.audit.log(
                 AuditEventType.RATE_LIMIT,

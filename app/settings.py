@@ -58,8 +58,8 @@ class Settings(BaseSettings):
     MAX_NONCE_CACHE_SIZE: int = 100_000
 
     # --- Rate Limiting ---
-    RATE_LIMIT_PER_MINUTE: int = 30
-    RATE_LIMIT_BURST: int = 10
+    RATE_LIMIT_PER_MINUTE: int = 120
+    RATE_LIMIT_BURST: int = 40
 
     # --- Audit ---
     AUDIT_LOG_PATH: str = "./audit_log/audit.jsonl"
