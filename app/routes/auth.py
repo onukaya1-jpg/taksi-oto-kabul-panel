@@ -57,6 +57,8 @@ class HeartbeatResponse(BaseModel):
     server_time: int
     commands: list[dict] | None = None
     admin_message: str | None = None
+    license_expires_at: str | None = None
+    license_plan: str | None = None
 
 class LogoutRequest(BaseModel):
     token: str = Field(..., min_length=32)
@@ -301,11 +303,19 @@ async def heartbeat(
             device_hwid=body.device_hwid,
             ip_address=client_ip,
         )
+        license_expires = None
+        if lic.expires_at is not None:
+            exp = lic.expires_at
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            license_expires = exp.isoformat()
         return HeartbeatResponse(
             status="ok",
             server_time=int(time.time()),
             commands=pending_commands if pending_commands else None,
             admin_message=admin_message,
+            license_expires_at=license_expires,
+            license_plan=lic.plan,
         )
     except (ValueError, PermissionError):
         return JSONResponse(status_code=401, content={"error": "INVALID_TOKEN"})
