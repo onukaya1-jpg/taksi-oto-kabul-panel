@@ -1,0 +1,141 @@
+{
+  "version": "2.2",
+  "game": "mobilemmo-Win64-Shipping.exe",
+  "exe_hash": "d700f0be1efb8197a4763ed2951fb950",
+  "exe_size": 85379304,
+  "updated_at": "2026-09-20 03:15:00",
+  "base_address": "0x7ff6e2360000",
+  "offsets": {
+    "BASE_OFFSET": "0x4ced418",
+    "GNAMES_OFFSET": "0x4d8afc0",
+    "PLAYER_OFF1": "0x250",
+    "PLAYER_OFF2": "0x138",
+    "PLAYER_X": "0x1e0",
+    "PLAYER_Y": "0x1e4",
+    "PLAYER_Z": "0x1e8",
+    "PLAYER_ROTATION": "0x548",
+    "CAMERA_OFF1": "0x390",
+    "CAMERA_ROTATION": "0x278",
+    "ENTITY_ARRAY": "0x128",
+    "ENTITY_COUNT": "0x130",
+    "ENTITY_X": "0x560",
+    "ENTITY_Y": "0x564",
+    "ENTITY_Z": "0x568",
+    "ENTITY_HP": "0x544",
+    "ENTITY_MAX_HP": "0x548",
+    "ENTITY_ALIVE": "0x50c",
+    "ENTITY_NAME": "0x350",
+    "ENTITY_TYPE": "0x3a0",
+    "ENTITY_ID": "0x3d0",
+    "SKILLS_ARRAY_PTR": "0x640",
+    "SKILLS_ARRAY_CNT": "0x648",
+    "SKILL_GAMETIME": "0x11c",
+    "SKILL_USEDTIME": "0xa4",
+    "SPEED_PTR_OFF1": "0x58",
+    "SPEED_PTR_OFF2": "0x398",
+    "MOVEMENT_SPEED_OFFSET": "0x7b4",
+    "ANIM_STATE_OFF1": "0x650",
+    "ANIM_STATE_OFF2": "0x430",
+    "ANIM_STATE_FINAL": "0x1c",
+    "MESH_OFFSET": "0x288",
+    "ANIM_INST_OFFSET": "0x6e0",
+    "PLAYER_HP_PTR": "0x398",
+    "PLAYER_HP_OFF": "0x7a4",
+    "PLAYER_MAX_HP_OFF": "0x7d8",
+    "PLAYER_MP_OFF": "0x7ac",
+    "PLAYER_MAX_MP_OFF": "0x7f8"
+  },
+  "sendAttack_result_rva": "0x10D5700",
+  "attack_range_patches": {
+    "patch1_manhattan_fixed": {
+      "rva": "0x10d58d5",
+      "func_offset": 469,
+      "original_bytes": [
+        15,
+        143,
+        101,
+        1,
+        0,
+        0
+      ],
+      "pattern": [
+        243,
+        15,
+        44,
+        193,
+        131,
+        248
+      ],
+      "jmp_offset": 7,
+      "jmp_opcodes": [
+        15,
+        143
+      ],
+      "description": "Manhattan sabit sinir (cvttss2si+cmp eax,imm8 + jg)"
+    },
+    "patch2_manhattan_dynamic": {
+      "rva": "0x10d59ad",
+      "func_offset": 685,
+      "original_bytes": [
+        15,
+        141,
+        141,
+        0,
+        0,
+        0
+      ],
+      "pattern": [
+        243,
+        15,
+        44,
+        193,
+        59,
+        194
+      ],
+      "jmp_offset": 6,
+      "jmp_opcodes": [
+        15,
+        141
+      ],
+      "description": "Manhattan dinamik (cvttss2si+cmp eax,edx + jge)"
+    },
+    "patch3_euclidean": {
+      "rva": "0x10d5853",
+      "func_offset": 339,
+      "original_bytes": [
+        15,
+        130,
+        130,
+        0,
+        0,
+        0
+      ],
+      "pattern": [
+        15,
+        47
+      ],
+      "jmp_offset": 8,
+      "jmp_opcodes": [
+        15,
+        130
+      ],
+      "description": "Euclidean distance^2 (comiss + jb)"
+    }
+  },
+  "notes": {
+    "BASE_OFFSET": "gameManager objesi (mob listesi + Player). UE4 UWorld DEGIL.",
+    "GNAMES_OFFSET": "GNames tablosu (FName cozumleme)",
+    "PLAYER_OFF1": "gameManager -> playerMove (Pawn, dogrudan)",
+    "PLAYER_OFF2": "Pawn -> RootComponent (CapsuleComponent)",
+    "PLAYER_X/Y/Z": "RootComponent -> RelativeLocation (float)",
+    "ENTITY_ARRAY": "gameManager -> NPC dizisi (TArray.Data)",
+    "ENTITY_COUNT": "gameManager -> NPC sayisi (TArray.Num)",
+    "ENTITY_X/Y/Z": "NPC.mobPos = gercek konum. Eski 0x318 (TargetLocation) hareketli mobda sapiyordu.",
+    "ENTITY_ALIVE": "NPC.dead flag'i -- 0 = CANLI (ters mantik). entity.cpp zaten hp>0 kullaniyor.",
+    "SPEED chain": "gameManager->+0x58(kendisi)->+0x398(loader)->+0x7B4 (hiz YUZDESI, normal=100)",
+    "ANIM_STATE chain": "loader->+0x650(AnimInstance)->+0x430->+0x1C (knockback: 8 -> 3 yaz)",
+    "PLAYER_HP": "gameManager->+0x398(loader)->+0x7A4 hp / +0x7D8 maxHp / +0x7AC mp / +0x7F8 maxMp",
+    "ATTACK_RANGE": "sendAttack_result (rva 0x10D5700) icinde 3 mesafe kontrolu NOP",
+    "guncelleme": "2026-09-20 oyun yamasi sonrasi UE4 reflection (FField) ile yeniden bulundu"
+  }
+}

@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Taksi Oto Kabul — Admin Panel</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --bg2: #161922;
+            --bg3: #1e2130;
+            --border: #2a2d3e;
+            --text: #e4e6f0;
+            --text2: #9499b3;
+            --accent: #6c5ce7;
+            --accent2: #a29bfe;
+            --green: #00b894;
+            --red: #e17055;
+            --orange: #fdcb6e;
+            --blue: #74b9ff;
+            --radius: 10px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Login Screen ── */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--bg) 0%, #1a1d2e 100%);
+        }
+
+        .login-box {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .login-box h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-box p { color: var(--text2); margin-bottom: 32px; font-size: 14px; }
+
+        .login-box input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .login-box input:focus { border-color: var(--accent); }
+
+        .login-box button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent), #5a4bd1);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .login-box button:hover { opacity: 0.9; }
+
+        .login-error {
+            color: var(--red);
+            font-size: 13px;
+            margin-top: 12px;
+            min-height: 20px;
+        }
+
+        /* ── Main Layout ── */
+        #app { display: none; }
+
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: 240px;
+            height: 100vh;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            z-index: 100;
+        }
+
+        .sidebar .logo {
+            font-size: 18px;
+            font-weight: 700;
+            padding: 8px 12px;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar .logo small {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+            -webkit-text-fill-color: var(--text2);
+            margin-top: 2px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            color: var(--text2);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.15s;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover { background: var(--bg3); color: var(--text); }
+        .nav-item.active { background: var(--accent); color: white; }
+        .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+
+        .main {
+            margin-left: 240px;
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .page-header h2 { font-size: 22px; font-weight: 600; }
+
+        /* ── Stats Cards ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+
+        .stat-card .label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+        .stat-card .value.green { color: var(--green); }
+        .stat-card .value.red { color: var(--red); }
+        .stat-card .value.orange { color: var(--orange); }
+        .stat-card .value.blue { color: var(--blue); }
+
+        /* ── Table ── */
+        .card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-header h3 { font-size: 15px; font-weight: 600; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg3);
+        }
+
+        td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover td { background: rgba(108, 92, 231, 0.04); }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-green { background: rgba(0,184,148,0.15); color: var(--green); }
+        .badge-red { background: rgba(225,112,85,0.15); color: var(--red); }
+        .badge-orange { background: rgba(253,203,110,0.15); color: var(--orange); }
+        .badge-blue { background: rgba(116,185,255,0.15); color: var(--blue); }
+        .badge-yellow { background: rgba(253,203,110,0.15); color: #ffeaa7; }
+        .badge-cyan { background: rgba(0,206,209,0.15); color: #00ced1; }
+        .badge-pink { background: rgba(253,121,168,0.15); color: #fd79a8; }
+        .badge-purple { background: rgba(108,92,231,0.15); color: var(--accent2); }
+        .badge-gray { background: rgba(148,153,179,0.15); color: var(--text2); }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #5a4bd1; }
+        .btn-danger { background: rgba(225,112,85,0.15); color: var(--red); }
+        .btn-danger:hover { background: rgba(225,112,85,0.25); }
+        .btn-success { background: rgba(0,184,148,0.15); color: var(--green); }
+        .btn-success:hover { background: rgba(0,184,148,0.25); }
+        .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+        .btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+        /* ── Modal ── */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-backdrop.show { display: flex; }
+
+        .modal {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 32px;
+            width: 480px;
+            max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal h3 { font-size: 18px; margin-bottom: 24px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text2);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        /* ── Toast ── */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+
+        .toast-success { background: rgba(0,184,148,0.9); color: white; }
+        .toast-error { background: rgba(225,112,85,0.9); color: white; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* ── License Detail Panel ── */
+        .detail-panel {
+            display: none;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-top: 16px;
+        }
+
+        .detail-panel.show { display: block; }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item .label { font-size: 11px; color: var(--text2); text-transform: uppercase; }
+        .detail-item .value { font-size: 14px; margin-top: 2px; word-break: break-all; }
+
+        .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        /* ── Security Events ── */
+        .severity-critical { color: var(--red); font-weight: 600; }
+        .severity-warning { color: var(--orange); }
+        .severity-info { color: var(--blue); }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; padding: 16px 8px; }
+            .sidebar .logo { font-size: 0; }
+            .sidebar .logo::first-letter { font-size: 18px; }
+            .nav-item span:not(.icon) { display: none; }
+            .main { margin-left: 60px; padding: 20px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* ── Loading ── */
+        .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text2);
+        }
+
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* ── Copy button ── */
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text2);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .copy-btn:hover { background: var(--bg3); color: var(--text); }
+
+        .key-text {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Bulk create result */
+        .bulk-result {
+            background: var(--bg3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .bulk-result .key-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── Bot Control Panel Styles ── */
+        .online-tabs { display:flex; gap:4px; margin-bottom:16px; background:var(--bg3); border-radius:8px; padding:4px; }
+        .online-tab { flex:1; padding:10px 16px; border:none; background:transparent; color:var(--text2); font-size:13px; font-weight:500; border-radius:6px; cursor:pointer; transition:all .2s; text-align:center; }
+        .online-tab.active { background:var(--accent); color:#fff; }
+        .online-tab:hover:not(.active) { color:var(--text); background:rgba(108,92,231,.15); }
+
+        .online-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+        .online-toolbar .badge { font-size:13px; padding:6px 14px; }
+
+        .bot-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(370px, 1fr)); gap:16px; }
+
+        .bot-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:18px; transition:border-color .2s; }
+        .bot-card:hover { border-color:var(--accent); }
+        .bot-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+        .bot-card-header .char-name { font-size:15px; font-weight:600; color:var(--accent2); }
+        .bot-card-header .char-key { font-size:11px; color:var(--text2); font-family:monospace; margin-top:2px; }
+        .bot-card-header .plan-badge { font-size:11px; }
+
+        .bot-state-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:.3px; }
+        .bot-state-badge.running { background:rgba(0,184,148,.15); color:var(--green); }
+        .bot-state-badge.stopped { background:rgba(225,112,85,.15); color:var(--red); }
+        .bot-state-badge.offline { background:rgba(148,153,179,.15); color:var(--text2); }
+
+        .state-label { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-left:6px; }
+        .state-label.attacking { background:rgba(225,112,85,.15); color:#e17055; }
+        .state-label.looting { background:rgba(253,203,110,.15); color:#fdcb6e; }
+        .state-label.moving { background:rgba(116,185,255,.15); color:#74b9ff; }
+        .state-label.searching { background:rgba(162,155,254,.15); color:#a29bfe; }
+        .state-label.idle { background:rgba(148,153,179,.1); color:var(--text2); }
+        .state-label.dead { background:rgba(225,112,85,.2); color:#ff6b6b; }
+
+        .bar-group { margin:10px 0; }
+        .bar-label { display:flex; justify-content:space-between; font-size:11px; color:var(--text2); margin-bottom:3px; }
+        .bar-track { width:100%; height:10px; background:var(--bg); border-radius:5px; overflow:hidden; }
+        .bar-fill { height:100%; border-radius:5px; transition:width .4s ease; }
+        .bar-fill.hp { background:linear-gradient(90deg, #e17055, #00b894); }
+        .bar-fill.mp { background:linear-gradient(90deg, #6c5ce7, #74b9ff); }
+
+        .mini-stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin:10px 0; }
+        .mini-stat { text-align:center; padding:6px 4px; background:var(--bg); border-radius:6px; }
+        .mini-stat .val { font-size:14px; font-weight:700; color:var(--text); }
+        .mini-stat .lbl { font-size:10px; color:var(--text2); margin-top:1px; }
+
+        .card-meta { display:flex; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--text2); margin:8px 0; }
+        .card-meta span::before { content:'• '; opacity:.4; }
+        .card-meta span:first-child::before { content:''; }
+
+        .card-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+        .card-actions .btn { font-size:11px; padding:5px 10px; }
+
+        .session-table { width:100%; }
+        .session-active { color:var(--green); font-weight:600; }
+
+        @media (max-width: 768px) {
+            .bot-cards-grid { grid-template-columns:1fr; }
+            .mini-stats { grid-template-columns:repeat(2, 1fr); }
+            .online-toolbar { flex-direction:column; align-items:stretch; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══ Login Screen ═══ -->
+<div id="login-screen">
+    <div class="login-box">
+        <h1>Taksi Oto Kabul</h1>
+        <p>Lisans Yönetim Paneli</p>
+        <input type="password" id="api-key-input" placeholder="Admin API Key girin..." autofocus>
+        <button onclick="doLogin()">Giriş Yap</button>
+        <div class="login-error" id="login-error"></div>
+    </div>
+</div>
+
+<!-- ═══ Main App ═══ -->
+<div id="app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            Taksi Oto Kabul
+            <small>Admin Panel</small>
+        </div>
+        <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard">
+            <span class="icon">📊</span>
+            <span>Dashboard</span>
+        </div>
+        <div class="nav-item" onclick="showPage('licenses')" data-page="licenses">
+            <span class="icon">🔑</span>
+            <span>Lisanslar</span>
+        </div>
+        <div class="nav-item" onclick="showPage('create')" data-page="create">
+            <span class="icon">➕</span>
+            <span>Key Oluştur</span>
+        </div>
+        <div class="nav-item" onclick="showPage('security')" data-page="security">
+            <span class="icon">🛡️</span>
+            <span>Güvenlik</span>
+        </div>
+        <div class="nav-item" onclick="showPage('online')" data-page="online">
+            <span class="icon">🟢</span>
+            <span>Çevrimiçi</span>
+        </div>
+        <div class="nav-item" onclick="doLogout()" style="margin-top: auto; position: absolute; bottom: 24px; left: 16px; right: 16px;">
+            <span class="icon">🚪</span>
+            <span>Çıkış</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+
+        <!-- ── Dashboard Page ── -->
+        <div class="page" id="page-dashboard">
+            <div class="page-header">
+                <h2>Dashboard</h2>
+                <button class="btn btn-ghost" onclick="loadDashboard()">↻ Yenile</button>
+            </div>
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card"><div class="label">Toplam Lisans</div><div class="value" id="stat-total">—</div></div>
+                <div class="stat-card"><div class="label">Aktif Lisans</div><div class="value green" id="stat-active">—</div></div>
+                <div class="stat-card"><div class="label">Süresi Dolmuş</div><div class="value orange" id="stat-expired">—</div></div>
+                <div class="stat-card"><div class="label">İptal Edilen</div><div class="value red" id="stat-revoked">—</div></div>
+                <div class="stat-card"><div class="label">Kullanılmamış</div><div class="value" style="color:var(--text2)" id="stat-unused">—</div></div>
+                <div class="stat-card"><div class="label">🟢 Çevrimiçi</div><div class="value green" id="stat-online">—</div></div>
+                <div class="stat-card"><div class="label">Toplam Cihaz</div><div class="value blue" id="stat-devices">—</div></div>
+                <div class="stat-card"><div class="label">Aktif Cihaz</div><div class="value green" id="stat-active-devices">—</div></div>
+                <div class="stat-card"><div class="label">Güvenlik Olayı (24s)</div><div class="value red" id="stat-security">—</div></div>
+                <div class="stat-card"><div class="label">Token İşlemi (24s)</div><div class="value blue" id="stat-tokens">—</div></div>
+            </div>
+        </div>
+
+        <!-- ── Licenses Page ── -->
+        <div class="page" id="page-licenses" style="display:none">
+            <div class="page-header">
+                <h2>Lisans Yönetimi</h2>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-ghost" onclick="loadLicenses()">↻ Yenile</button>
+                    <button class="btn btn-primary" onclick="showPage('create')">+ Yeni Key</button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div style="display:flex; gap:12px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+                <input type="text" id="license-search" placeholder="🔍 Lisans key, HWID veya not ile ara..." oninput="debouncedSearch()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; width:320px; outline:none; transition:border-color .2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+                <select id="filter-product" onchange="loadLicenses()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">
+                    <option value="">Tüm Uygulamalar</option>
+                    <option value="gamestore">GameStore</option>
+                    <option value="taksi">Taksi Oto Kabul</option>
+                </select>
+                <select id="filter-plan" onchange="loadLicenses()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">
+                    <option value="">Tüm Planlar</option>
+                    <option value="minute">Dakikalık</option>
+                    <option value="hourly">Saatlik</option>
+                    <option value="daily">Günlük</option>
+                    <option value="weekly">Haftalık</option>
+                    <option value="monthly">Aylık</option>
+                    <option value="custom">Özel Süreli</option>
+                    <option value="lifetime">Lifetime</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text2); cursor:pointer;">
+                    <input type="checkbox" id="filter-active" onchange="loadLicenses()"> Sadece Aktif
+                </label>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Lisans Key</th>
+                            <th>Plan</th>
+                            <th>Durum</th>
+                            <th>HWID</th>
+                            <th>Oluşturulma</th>
+                            <th>Bitiş</th>
+                            <th>Son Görülme</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="licenses-tbody">
+                        <tr><td colspan="9" class="empty-state"><div class="spinner"></div> Yükleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div style="display:flex; justify-content:center; gap:8px; margin-top:16px;" id="pagination"></div>
+
+            <!-- Detail Panel -->
+            <div class="detail-panel" id="detail-panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 id="detail-title">Lisans Detayı</h3>
+                    <button class="btn btn-ghost btn-sm" onclick="closeDetail()">✕ Kapat</button>
+                </div>
+                <div class="detail-grid" id="detail-grid"></div>
+                <h4 style="font-size:13px; color:var(--text2); margin-bottom:8px;">Bağlı Cihazlar</h4>
+                <div id="detail-devices"></div>
+                <div class="detail-actions" id="detail-actions" style="margin-top:16px;"></div>
+            </div>
+        </div>
+
+        <!-- ── Create Key Page ── -->
+        <div class="page" id="page-create" style="display:none">
+            <div class="page-header">
+                <h2>Yeni Lisans Oluştur</h2>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+                <!-- Single Key -->
+                <div class="card" style="padding:24px;">
+                    <h3 style="margin-bottom:20px;">🔑 Tek Key</h3>
+                    <div class="form-group">
+                        <label>Uygulama</label>
+                        <select id="create-product">
+                            <option value="taksi" selected>Taksi Oto Kabul</option>
+                            <option value="gamestore">GameStore (Mobile2)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Plan</label>
+                        <select id="create-plan" onchange="onPlanChange('create')">
+                            <option value="minute">Dakikalık</option>
+                            <option value="hourly">Saatlik (1 Saat)</option>
+                            <option value="daily">Günlük (1 Gün)</option>
+                            <option value="weekly">Haftalık (7 Gün)</option>
+                            <option value="monthly" selected>Aylık (30 Gün)</option>
+                            <option value="custom">Özel Süreli</option>
+                            <option value="lifetime">Lifetime</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="create-duration-group">
+                        <label id="create-duration-label">Süre (Gün)</label>
+                        <input type="number" id="create-days" value="30" min="1" max="525600">
+                    </div>
+                    <div class="form-group">
+                        <label>Müşteri Adı</label>
+                        <input type="text" id="create-customer" placeholder="İsteğe bağlı...">
+                    </div>
+                    <!-- Max devices is always 1 per key -->
+                    <div class="form-group">
+                        <label>Özel Key (İsteğe Bağlı)</label>
+                        <input type="text" id="create-custom-key" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19"
+                               style="font-family:monospace; letter-spacing:1px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Not</label>
+                        <input type="text" id="create-notes" placeholder="İsteğe bağlı not...">
+                    </div>
+                    <button class="btn btn-primary" onclick="createSingleKey()" style="width:100%; margin-top:8px;">
+                        🔑 Lisans Oluştur
+                    </button>
+                    <div id="single-result"></div>
+                </div>
+
+                <!-- Bulk Keys -->
+                <div class="card" style="padding:24px;">
+                    <h3 style="margin-bottom:20px;">📦 Toplu Key</h3>
+                    <div class="form-group">
+                        <label>Uygulama</label>
+                        <select id="bulk-product">
+                            <option value="taksi" selected>Taksi Oto Kabul</option>
+                            <option value="gamestore">GameStore (Mobile2)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Plan</label>
+                        <select id="bulk-plan" onchange="onPlanChange('bulk')">
+                            <option value="minute">Dakikalık</option>
+                            <option value="hourly">Saatlik (1 Saat)</option>
+                            <option value="daily">Günlük (1 Gün)</option>
+                            <option value="weekly">Haftalık (7 Gün)</option>
+                            <option value="monthly" selected>Aylık (30 Gün)</option>
+                            <option value="custom">Özel Süreli</option>
+                            <option value="lifetime">Lifetime</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="bulk-duration-group">
+                        <label id="bulk-duration-label">Süre (Gün)</label>
+                        <input type="number" id="bulk-days" value="30" min="1" max="525600">
+                    </div>
+                    <div class="form-group">
+                        <label>Adet</label>
+                        <input type="number" id="bulk-count" value="5" min="1" max="100">
+                    </div>
+                    <button class="btn btn-primary" onclick="createBulkKeys()" style="width:100%; margin-top:8px;">
+                        📦 Toplu Oluştur
+                    </button>
+                    <div id="bulk-result"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Security Page ── -->
+        <div class="page" id="page-security" style="display:none">
+            <div class="page-header">
+                <h2>Güvenlik Olayları</h2>
+                <div style="display:flex; gap:8px;">
+                    <select id="security-hours" onchange="loadSecurityEvents()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">
+                        <option value="24">Son 24 Saat</option>
+                        <option value="72">Son 3 Gün</option>
+                        <option value="168">Son 7 Gün</option>
+                    </select>
+                    <button class="btn btn-ghost" onclick="loadSecurityEvents()">↻ Yenile</button>
+                </div>
+            </div>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Zaman</th>
+                            <th>Olay Tipi</th>
+                            <th>Şiddet</th>
+                            <th>HWID</th>
+                            <th>IP</th>
+                            <th>Detay</th>
+                        </tr>
+                    </thead>
+                    <tbody id="security-tbody">
+                        <tr><td colspan="6" class="empty-state"><div class="spinner"></div> Yükleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══ Online Users & Bot Control Page ═══ -->
+        <div class="page" id="page-online" style="display:none">
+            <div class="page-header">
+                <h2>🟢 Bot Kontrol Paneli</h2>
+                <span id="online-count-badge" class="badge badge-green" style="font-size:13px;"></span>
+            </div>
+
+            <!-- Tabs -->
+            <div class="online-tabs">
+                <button class="online-tab active" onclick="switchOnlineTab('users')">🎮 Çevrimiçi Kullanıcılar</button>
+                <button class="online-tab" onclick="switchOnlineTab('sessions')">📋 Oturum Geçmişi</button>
+            </div>
+
+            <!-- === Tab: Online Users === -->
+            <div id="online-tab-users">
+                <div class="online-toolbar">
+                    <button class="btn btn-primary btn-sm" onclick="loadOnlineUsers()">↻ Yenile</button>
+                    <button class="btn btn-danger btn-sm" onclick="confirmStopAll()">⛔ Tüm Botları Durdur</button>
+                    <button class="btn btn-ghost btn-sm" onclick="openBroadcastModal()">📢 Toplu Mesaj</button>
+                </div>
+                <div id="bot-cards-container" class="bot-cards-grid">
+                    <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text2);"><div class="spinner"></div> Yükleniyor...</div>
+                </div>
+            </div>
+
+            <!-- === Tab: Session History === -->
+            <div id="online-tab-sessions" style="display:none">
+                <div class="online-toolbar">
+                    <button class="btn btn-primary btn-sm" onclick="loadSessions()">↻ Yenile</button>
+                    <input type="text" id="session-hwid-filter" placeholder="HWID ile filtrele..." style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; width:280px;">
+                </div>
+                <div class="card">
+                    <table class="session-table">
+                        <thead>
+                            <tr>
+                                <th>HWID</th>
+                                <th>Karakter</th>
+                                <th>Başlangıç</th>
+                                <th>Bitiş</th>
+                                <th>Süre</th>
+                                <th>IP</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessions-tbody">
+                            <tr><td colspan="7" class="empty-state"><div class="spinner"></div> Yükleniyor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ Modals ═══ -->
+
+<!-- Broadcast Message Modal -->
+<div class="modal-backdrop" id="broadcast-modal">
+    <div class="modal">
+        <h3>📢 Toplu Mesaj Gönder</h3>
+        <p style="color:var(--text2); font-size:13px; margin-bottom:16px;">Tüm çevrimiçi kullanıcılara mesaj gönderilecek.</p>
+        <div class="form-group">
+            <label>Mesaj</label>
+            <input type="text" id="broadcast-message" placeholder="Mesajınızı yazın..." maxlength="500">
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-ghost" onclick="closeModal('broadcast-modal')">İptal</button>
+            <button class="btn btn-primary" onclick="doBroadcastMessage()">Gönder</button>
+        </div>
+    </div>
+</div>
+
+<!-- Send Message to Single User Modal -->
+<div class="modal-backdrop" id="message-modal">
+    <div class="modal">
+        <h3>💬 Mesaj Gönder</h3>
+        <p style="color:var(--text2); font-size:13px; margin-bottom:16px;">Hedef: <strong id="message-target-label"></strong></p>
+        <div class="form-group">
+            <label>Mesaj</label>
+            <input type="text" id="single-message" placeholder="Mesajınızı yazın..." maxlength="500">
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-ghost" onclick="closeModal('message-modal')">İptal</button>
+            <button class="btn btn-primary" onclick="doSendSingleMessage()">Gönder</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="extend-modal">
+    <div class="modal">
+        <h3>⏰ Süre Uzat</h3>
+        <div class="form-group">
+            <label>Eklenecek Gün</label>
+            <input type="number" id="extend-days" value="30" min="1" max="3650">
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-ghost" onclick="closeModal('extend-modal')">İptal</button>
+            <button class="btn btn-primary" onclick="doExtend()">Uzat</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// GameStore Admin Panel — Client Logic
+// ══════════════════════════════════════════════════════════════
+
+let API_KEY = '';
+const BASE = window.location.origin;
+let currentPage = 1;
+let selectedLicenseId = null;
+let onlineRefreshTimer = null;
+let licensesRefreshTimer = null;
+
+// ── API Helper ──
+async function api(method, path, body = null) {
+    const opts = {
+        method,
+        headers: {
+            'X-Admin-Key': API_KEY,
+            'Content-Type': 'application/json',
+        },
+    };
+    if (body) opts.body = JSON.stringify(body);
+
+    const res = await fetch(`${BASE}${path}`, opts);
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    return res.json();
+}
+
+// ── Login ──
+async function doLogin() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key) return;
+
+    API_KEY = key;
+    try {
+        await api('GET', '/admin/stats');
+        sessionStorage.setItem('admin_key', key);
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        loadDashboard();
+    } catch (e) {
+        document.getElementById('login-error').textContent = 'Geçersiz API Key!';
+        API_KEY = '';
+    }
+}
+
+function doLogout() {
+    sessionStorage.removeItem('admin_key');
+    API_KEY = '';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('api-key-input').value = '';
+    document.getElementById('login-error').textContent = '';
+}
+
+// Auto-login from session
+(function() {
+    const savedKey = sessionStorage.getItem('admin_key');
+    if (savedKey) {
+        document.getElementById('api-key-input').value = savedKey;
+        doLogin();
+    }
+    // Enter key support
+    document.getElementById('api-key-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') doLogin();
+    });
+})();
+
+// ── Plan → Duration Auto-fill ──
+const PLAN_DEFAULTS = { minute: 30, hourly: 1, daily: 1, weekly: 7, monthly: 30, custom: 30, lifetime: 36500, admin: 36500 };
+const PLAN_UNITS = { minute: 'dakika', hourly: 'saat', daily: 'gün', weekly: 'gün', monthly: 'gün', custom: 'gün', lifetime: 'gün', admin: 'gün' };
+const PLAN_LABELS = { minute: 'Süre (Dakika)', hourly: 'Süre (Saat)', daily: 'Süre (Gün)', weekly: 'Süre (Gün)', monthly: 'Süre (Gün)', custom: 'Süre (Gün)', lifetime: 'Süre (Gün)', admin: 'Süre (Gün)' };
+const SUB_DAY_PLANS = new Set(['minute', 'hourly']);
+function onPlanChange(prefix) {
+    const plan = document.getElementById(`${prefix}-plan`).value;
+    const daysInput = document.getElementById(`${prefix}-days`);
+    const label = document.getElementById(`${prefix}-duration-label`);
+    const group = document.getElementById(`${prefix}-duration-group`);
+    if (PLAN_DEFAULTS[plan] !== undefined) daysInput.value = PLAN_DEFAULTS[plan];
+    if (label) label.textContent = PLAN_LABELS[plan] || 'Süre (Gün)';
+    // lifetime/admin: hide duration, otherwise show
+    if (group) group.style.display = (plan === 'lifetime' || plan === 'admin') ? 'none' : '';
+}
+
+// ── Navigation ──
+function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.getElementById(`page-${name}`).style.display = 'block';
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector(`.nav-item[data-page="${name}"]`)?.classList.add('active');
+
+    if (name === 'dashboard') loadDashboard();
+    else if (name === 'licenses') loadLicenses();
+    else if (name === 'security') loadSecurityEvents();
+    else if (name === 'online') loadOnlineUsers();
+}
+
+// ── Dashboard ──
+async function loadDashboard() {
+    try {
+        const s = await api('GET', '/admin/stats');
+        document.getElementById('stat-total').textContent = s.total_licenses;
+        document.getElementById('stat-active').textContent = s.active_licenses;
+        document.getElementById('stat-expired').textContent = s.expired_licenses;
+        document.getElementById('stat-revoked').textContent = s.revoked_licenses;
+        document.getElementById('stat-unused').textContent = s.unused_licenses;
+        document.getElementById('stat-online').textContent = s.online_now;
+        document.getElementById('stat-devices').textContent = s.total_devices;
+        document.getElementById('stat-active-devices').textContent = s.active_devices;
+        document.getElementById('stat-security').textContent = s.security_events_24h;
+        document.getElementById('stat-tokens').textContent = s.token_ops_24h;
+    } catch (e) {
+        toast('Dashboard yükleme hatası: ' + e.message, 'error');
+    }
+}
+
+// ── Licenses ──
+let searchTimer = null;
+function debouncedSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { currentPage = 1; loadLicenses(); }, 300);
+}
+
+async function loadLicenses() {
+    const plan = document.getElementById('filter-plan').value;
+    const activeOnly = document.getElementById('filter-active').checked;
+    const search = document.getElementById('license-search').value.trim();
+    const tbody = document.getElementById('licenses-tbody');
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="spinner"></div></td></tr>';
+
+    try {
+        let url = `/admin/licenses?page=${currentPage}&per_page=50`;
+        const product = document.getElementById('filter-product').value;
+        if (plan) url += `&plan=${encodeURIComponent(plan)}`;
+        if (product) url += `&product=${encodeURIComponent(product)}`;
+        if (activeOnly) url += `&active_only=true`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        const data = await api('GET', url);
+        if (!data.licenses.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="icon">🔑</div>Henüz lisans yok</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.licenses.map(lic => `
+            <tr>
+                <td>${lic.id}</td>
+                <td>
+                    <span class="key-text">${lic.license_key}</span>
+                    <button class="copy-btn" onclick="copyText('${lic.license_key}')" title="Kopyala">📋</button>
+                </td>
+                <td><span class="badge badge-gray">${lic.product === 'taksi' ? 'Taksi' : 'GameStore'}</span> <span class="badge badge-${lic.plan === 'admin' ? 'red' : lic.plan === 'lifetime' ? 'purple' : lic.plan === 'monthly' ? 'green' : lic.plan === 'weekly' ? 'yellow' : lic.plan === 'daily' ? 'blue' : lic.plan === 'hourly' ? 'cyan' : lic.plan === 'minute' ? 'pink' : 'green'}">${lic.plan === 'minute' ? 'Dakikalık' : lic.plan === 'hourly' ? 'Saatlik' : lic.plan === 'daily' ? 'Günlük' : lic.plan === 'weekly' ? 'Haftalık' : lic.plan === 'monthly' ? 'Aylık' : lic.plan === 'custom' ? 'Özel' : lic.plan === 'lifetime' ? 'Lifetime' : lic.plan === 'admin' ? 'Admin' : lic.plan}</span></td>
+                <td>${getStatusBadge(lic)}</td>
+                <td style="font-size:11px; color:var(--text2);">${lic.hwid || '—'}</td>
+                <td style="font-size:12px;">${formatDate(lic.created_at)}</td>
+                <td style="font-size:12px;">${formatDate(lic.expires_at)}</td>
+                <td style="font-size:12px;">${formatDate(lic.last_seen_at)}</td>
+                <td>
+                    <button class="btn btn-ghost btn-sm" onclick="viewLicense(${lic.id})">👁</button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Pagination
+        const totalPages = Math.ceil(data.total / data.per_page);
+        const paginationEl = document.getElementById('pagination');
+        if (totalPages > 1) {
+            let btns = '';
+            for (let i = 1; i <= totalPages; i++) {
+                btns += `<button class="btn ${i === currentPage ? 'btn-primary' : 'btn-ghost'} btn-sm" onclick="goToPage(${i})">${i}</button>`;
+            }
+            paginationEl.innerHTML = btns;
+        } else {
+            paginationEl.innerHTML = '';
+        }
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state">❌ Hata: ${e.message}</td></tr>`;
+    }
+
+    // Auto-refresh licenses every 15 seconds (for real-time online tracking)
+    if (typeof licensesRefreshTimer !== 'undefined' && licensesRefreshTimer) clearInterval(licensesRefreshTimer);
+    licensesRefreshTimer = setInterval(() => {
+        if (document.getElementById('page-licenses').style.display !== 'none') {
+            loadLicenses();
+        } else {
+            clearInterval(licensesRefreshTimer);
+            licensesRefreshTimer = null;
+        }
+    }, 15000);
+}
+
+function goToPage(p) { currentPage = p; loadLicenses(); }
+
+function getStatusBadge(lic) {
+    if (lic.is_revoked) return '<span class="badge badge-red">İptal</span>';
+    if (!lic.is_active) return '<span class="badge badge-red">Pasif</span>';
+    if (lic.expires_at && new Date(lic.expires_at) < new Date()) return '<span class="badge badge-orange">Süresi Dolmuş</span>';
+    if (!lic.hwid && !lic.last_seen_at) return '<span class="badge badge-gray">Kullanılmamış</span>';
+    // Use server-side is_online flag (avoids timezone parsing issues)
+    if (lic.is_online) return '<span class="badge badge-green">🟢 Çevrimiçi</span>';
+    return '<span class="badge badge-blue">Çevrimdışı</span>';
+}
+
+// ── License Detail ──
+async function viewLicense(id) {
+    selectedLicenseId = id;
+    try {
+        const lic = await api('GET', `/admin/licenses/${id}`);
+        const panel = document.getElementById('detail-panel');
+        document.getElementById('detail-title').textContent = `🔑 ${lic.license_key}`;
+
+        document.getElementById('detail-grid').innerHTML = `
+            <div class="detail-item"><div class="label">Uygulama</div><div class="value">${lic.product === 'taksi' ? 'Taksi Oto Kabul' : 'GameStore'}</div></div>
+            <div class="detail-item"><div class="label">Plan</div><div class="value">${lic.plan}</div></div>
+            <div class="detail-item"><div class="label">Durum</div><div class="value">${lic.is_revoked ? '❌ İptal' : lic.is_active ? '✅ Aktif' : '⏸ Pasif'}</div></div>
+            <div class="detail-item"><div class="label">HWID</div><div class="value">${lic.hwid || 'Bağlanmamış'}</div></div>
+            <div class="detail-item"><div class="label">Maks. Cihaz</div><div class="value">${lic.max_devices}</div></div>
+            <div class="detail-item"><div class="label">Oluşturulma</div><div class="value">${formatDate(lic.created_at)}</div></div>
+            <div class="detail-item"><div class="label">Bitiş</div><div class="value">${formatDate(lic.expires_at)}</div></div>
+            <div class="detail-item"><div class="label">Son Görülme</div><div class="value">${formatDate(lic.last_seen_at)}</div></div>
+            <div class="detail-item"><div class="label">Son IP</div><div class="value">${lic.last_ip || '—'}</div></div>
+            <div class="detail-item" style="grid-column:span 2"><div class="label">Notlar</div><div class="value">${lic.notes || '—'}</div></div>
+        `;
+
+        // Devices
+        const devEl = document.getElementById('detail-devices');
+        if (lic.devices.length) {
+            devEl.innerHTML = `<table><thead><tr><th>HWID</th><th>Kayıt</th><th>Son Görülme</th><th>IP</th><th>Durum</th></tr></thead><tbody>
+                ${lic.devices.map(d => `
+                    <tr>
+                        <td style="font-size:12px;">${d.device_hwid || '—'}</td>
+                        <td style="font-size:12px;">${formatDate(d.registered_at)}</td>
+                        <td style="font-size:12px;">${formatDate(d.last_seen_at)}</td>
+                        <td style="font-size:12px;">${d.last_ip || '—'}</td>
+                        <td>${d.is_active ? '<span class="badge badge-green">Aktif</span>' : '<span class="badge badge-red">Pasif</span>'}</td>
+                    </tr>
+                `).join('')}
+            </tbody></table>`;
+        } else {
+            devEl.innerHTML = '<div style="color:var(--text2); font-size:13px;">Henüz bağlı cihaz yok</div>';
+        }
+
+        // Actions
+        document.getElementById('detail-actions').innerHTML = `
+            ${!lic.is_revoked ? `<button class="btn btn-danger btn-sm" onclick="revokeLicense(${id})">⛔ İptal Et</button>` : `<button class="btn btn-success btn-sm" onclick="activateLicense(${id})">✅ Aktifleştir</button>`}
+            <button class="btn btn-ghost btn-sm" onclick="resetHwid(${id})">🔄 HWID Sıfırla</button>
+            <button class="btn btn-ghost btn-sm" onclick="openExtendModal(${id})">⏰ Süre Uzat</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteLicense(${id})">🗑 Sil</button>
+        `;
+
+        panel.classList.add('show');
+        panel.scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+        toast('Detay yükleme hatası: ' + e.message, 'error');
+    }
+}
+
+function closeDetail() {
+    document.getElementById('detail-panel').classList.remove('show');
+    selectedLicenseId = null;
+}
+
+// ── License Actions ──
+async function revokeLicense(id) {
+    if (!confirm('Bu lisansı iptal etmek istediğinize emin misiniz?')) return;
+    try {
+        await api('POST', `/admin/licenses/${id}/revoke`);
+        toast('Lisans iptal edildi', 'success');
+        viewLicense(id);
+        loadLicenses();
+    } catch (e) { toast('Hata: ' + e.message, 'error'); }
+}
+
+async function activateLicense(id) {
+    try {
+        await api('POST', `/admin/licenses/${id}/activate`);
+        toast('Lisans aktifleştirildi', 'success');
+        viewLicense(id);
+        loadLicenses();
+    } catch (e) { toast('Hata: ' + e.message, 'error'); }
+}
+
+async function resetHwid(id) {
+    if (!confirm('HWID sıfırlanacak — müşteri yeni bir PC\'de kullanabilir. Devam?')) return;
+    try {
+        const r = await api('POST', `/admin/licenses/${id}/reset-hwid`);
+        toast(`HWID sıfırlandı (eski: ${r.old_hwid || 'yok'})`, 'success');
+        viewLicense(id);
+    } catch (e) { toast('Hata: ' + e.message, 'error'); }
+}
+
+async function deleteLicense(id) {
+    if (!confirm('⚠️ Bu lisans kalıcı olarak silinecek! Devam?')) return;
+    try {
+        await api('DELETE', `/admin/licenses/${id}`);
+        toast('Lisans silindi', 'success');
+        closeDetail();
+        loadLicenses();
+    } catch (e) { toast('Hata: ' + e.message, 'error'); }
+}
+
+function openExtendModal(id) {
+    selectedLicenseId = id;
+    document.getElementById('extend-modal').classList.add('show');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+}
+
+async function doExtend() {
+    const days = parseInt(document.getElementById('extend-days').value);
+    if (!days || days < 1) return;
+    try {
+        const r = await api('POST', `/admin/licenses/${selectedLicenseId}/extend`, { days });
+        toast(`Süre uzatıldı → ${formatDate(r.new_expires_at)}`, 'success');
+        closeModal('extend-modal');
+        viewLicense(selectedLicenseId);
+        loadLicenses();
+    } catch (e) { toast('Hata: ' + e.message, 'error'); }
+}
+
+// ── Create Key ──
+async function createSingleKey() {
+    const plan = document.getElementById('create-plan').value;
+    const product = document.getElementById('create-product').value;
+    const durVal = parseInt(document.getElementById('create-days').value);
+    const customer = document.getElementById('create-customer').value.trim();
+    const maxDevices = 1;  // Always 1 device per key
+    const customKey = document.getElementById('create-custom-key').value.trim();
+    const notes = document.getElementById('create-notes').value.trim();
+
+    const body = {
+        plan,
+        product,
+        max_devices: maxDevices,
+        customer_name: customer,
+        notes: notes,
+        license_key: customKey,
+    };
+    if (SUB_DAY_PLANS.has(plan)) {
+        if (plan === 'hourly') body.hours = durVal;
+        else body.minutes = durVal;
+    } else {
+        body.days = durVal;
+    }
+
+    try {
+        const r = await api('POST', '/admin/licenses', body);
+
+        // Build Turkish plan label
+        const planLabels = { minute:'Dakikalık', hourly:'Saatlik', daily:'1 Gün', weekly:'7 Gün', monthly:'30 Gün', custom:`${durVal} Gün`, lifetime:'Lifetime', admin:'Admin' };
+        if (plan === 'minute') planLabels.minute = `${durVal} Dakika`;
+        if (plan === 'hourly') planLabels.hourly = `${durVal} Saat`;
+        if (plan === 'daily') planLabels.daily = `${durVal} Gün`;
+        if (plan === 'weekly') planLabels.weekly = `${durVal} Gün`;
+        if (plan === 'monthly') planLabels.monthly = `${durVal} Gün`;
+        const paketStr = planLabels[plan] || plan;
+
+        // Turkish date
+        const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+        const now = new Date();
+        const tarih = `${now.getDate()}/${aylar[now.getMonth()]}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+        const customerDisplay = customer || '—';
+
+        // Bitiş tarihi hesapla
+        let bitisStr = 'Lifetime';
+        if (plan !== 'lifetime' && plan !== 'admin') {
+            const bitis = new Date(now);
+            if (SUB_DAY_PLANS.has(plan)) {
+                const mins = (plan === 'hourly') ? durVal * 60 : durVal;
+                bitis.setMinutes(bitis.getMinutes() + mins);
+            } else {
+                bitis.setDate(bitis.getDate() + durVal);
+            }
+            bitisStr = `${bitis.getDate()}/${aylar[bitis.getMonth()]}/${bitis.getFullYear()} ${String(bitis.getHours()).padStart(2,'0')}:${String(bitis.getMinutes()).padStart(2,'0')}:${String(bitis.getSeconds()).padStart(2,'0')}`;
+        }
+
+        const receiptText = product === 'taksi'
+            ? `Sipariş\n------------\nÜye Anahtarı: ${r.license_key}\nUygulama: Taksi Oto Kabul\nID: ${customerDisplay}\nPaket: ${paketStr}\nCihaz: 1 Cihaz\nSatın Alma Tarihi: ${tarih}\nBitiş Tarihi: ${bitisStr}\nSatıcı: Taksi Oto Kabul\n------------\nTaksi Oto Kabul\n\nBizi tercih ettiğiniz için teşekkür ederiz! ❤️`
+            : `Sipariş Hile \n------------\nÜye Anahtarı: ${r.license_key}\nOyun: Mobile2 Global\nID: ${customerDisplay}\nPaket: ${paketStr}\nCihaz: 1 Cihaz\nSatın Alma Tarihi: ${tarih}\nBitiş Tarihi: ${bitisStr}\nSatıcı: GameStore\n------------\nGameStore Mod\n\nBizi tercih ettiğiniz için teşekkür ederiz! ❤️`;
+
+        document.getElementById('single-result').innerHTML = `
+            <div style="margin-top:16px; padding:20px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+                <div style="color:var(--green); font-size:14px; margin-bottom:12px; text-align:center;">✅ Key Oluşturuldu!</div>
+                <pre id="receipt-text" style="font-family:'Consolas','Monaco',monospace; font-size:13px; line-height:1.7; color:var(--text); white-space:pre-wrap; margin:0; padding:16px; background:var(--bg); border-radius:8px; border:1px solid var(--border);">${receiptText}</pre>
+                <div style="display:flex; gap:8px; margin-top:12px; justify-content:center;">
+                    <button class="btn btn-primary btn-sm" onclick="copyText(document.getElementById('receipt-text').textContent)">📋 Makbuzu Kopyala</button>
+                    <button class="btn btn-ghost btn-sm" onclick="copyText('${r.license_key}')">🔑 Sadece Key</button>
+                </div>
+            </div>
+        `;
+        toast(`Key oluşturuldu: ${r.license_key}`, 'success');
+    } catch (e) {
+        toast('Hata: ' + e.message, 'error');
+    }
+}
+
+async function createBulkKeys() {
+    const plan = document.getElementById('bulk-plan').value;
+    const product = document.getElementById('bulk-product').value;
+    const durVal = parseInt(document.getElementById('bulk-days').value);
+    const count = parseInt(document.getElementById('bulk-count').value);
+    const resultEl = document.getElementById('bulk-result');
+
+    resultEl.innerHTML = '<div style="margin-top:16px; text-align:center;"><div class="spinner"></div> Oluşturuluyor...</div>';
+
+    const keys = [];
+    let errors = 0;
+
+    for (let i = 0; i < count; i++) {
+        try {
+            const body = { plan, product, max_devices: 1 };
+            if (SUB_DAY_PLANS.has(plan)) {
+                if (plan === 'hourly') body.hours = durVal;
+                else body.minutes = durVal;
+            } else {
+                body.days = durVal;
+            }
+            const r = await api('POST', '/admin/licenses', body);
+            keys.push(r.license_key);
+        } catch (e) {
+            errors++;
+        }
+    }
+
+    if (keys.length) {
+        const allKeysText = keys.join('\n');
+        resultEl.innerHTML = `
+            <div class="bulk-result">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span style="color:var(--green);">✅ ${keys.length} key oluşturuldu${errors ? ` (${errors} hata)` : ''}</span>
+                    <button class="btn btn-primary btn-sm" onclick="copyText(\`${allKeysText}\`)">📋 Tümünü Kopyala</button>
+                </div>
+                ${keys.map((k, i) => `
+                    <div class="key-row">
+                        <span class="key-text">${i + 1}. ${k}</span>
+                        <button class="copy-btn" onclick="copyText('${k}')">📋</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        toast(`${keys.length} key başarıyla oluşturuldu`, 'success');
+    } else {
+        resultEl.innerHTML = '<div style="margin-top:16px; color:var(--red);">❌ Key oluşturulamadı</div>';
+    }
+}
+
+// ── Online Users & Bot Control ──
+let messageTargetHwid = '';
+let currentOnlineTab = 'users';
+
+function switchOnlineTab(tab) {
+    currentOnlineTab = tab;
+    document.querySelectorAll('.online-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.online-tab[onclick="switchOnlineTab('${tab}')"]`).classList.add('active');
+    document.getElementById('online-tab-users').style.display = tab === 'users' ? '' : 'none';
+    document.getElementById('online-tab-sessions').style.display = tab === 'sessions' ? '' : 'none';
+    if (tab === 'sessions') loadSessions();
+}
+
+function formatDuration(sec) {
+    if (!sec || sec <= 0) return '—';
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return `${h}s ${m}dk`;
+    if (m > 0) return `${m}dk ${s}sn`;
+    return `${s}sn`;
+}
+
+function getStateBadgeClass(state) {
+    const map = { attacking:'attacking', looting:'looting', moving:'moving', searching:'searching', idle:'idle', dead:'dead', farming:'attacking', collecting:'looting' };
+    return map[state] || 'idle';
+}
+
+function getStateLabel(state) {
+    const map = { attacking:'Saldırı', looting:'Toplama', moving:'Hareket', searching:'Arama', idle:'Beklemede', dead:'Öldü', farming:'Farm', collecting:'Toplama' };
+    return map[state] || state || 'Bilinmiyor';
+}
+
+function renderBotCard(u) {
+    const bs = u.bot_status;
+    const hasBot = bs !== null;
+    const running = hasBot && bs.running;
+    const charName = (hasBot && bs.character_name) || 'Bilinmiyor';
+    const state = hasBot ? bs.state : 'offline';
+    const hpPct = hasBot && bs.max_hp > 0 ? Math.round((bs.hp / bs.max_hp) * 100) : 0;
+    const mpPct = hasBot && bs.max_mp > 0 ? Math.round((bs.mp / bs.max_mp) * 100) : 0;
+    const hwid = u.device_hwid;
+    const shortHwid = hwid.length > 16 ? hwid.substring(0,16) + '…' : hwid;
+
+    return `
+    <div class="bot-card">
+        <div class="bot-card-header">
+            <div>
+                <div class="char-name">🎮 ${charName}</div>
+                <div class="char-key" title="${u.license_key}" onclick="copyText('${u.license_key}')" style="cursor:pointer;">${u.license_key}</div>
+            </div>
+            <div style="text-align:right;">
+                <span class="badge badge-purple" style="font-size:10px;">${u.plan}</span><br>
+                <span class="bot-state-badge ${running ? 'running' : hasBot ? 'stopped' : 'offline'}">${running ? '● Çalışıyor' : hasBot ? '○ Durdu' : '○ Bağlantısız'}</span>
+            </div>
+        </div>
+
+        ${hasBot ? `
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                <span style="font-size:12px;color:var(--text2);">Durum:</span>
+                <span class="state-label ${getStateBadgeClass(state)}">${getStateLabel(state)}</span>
+            </div>
+            <div class="bar-group">
+                <div class="bar-label"><span>HP</span><span>${bs.hp}/${bs.max_hp}</span></div>
+                <div class="bar-track"><div class="bar-fill hp" style="width:${hpPct}%"></div></div>
+            </div>
+            <div class="bar-group">
+                <div class="bar-label"><span>MP</span><span>${bs.mp}/${bs.max_mp}</span></div>
+                <div class="bar-track"><div class="bar-fill mp" style="width:${mpPct}%"></div></div>
+            </div>
+            <div class="mini-stats">
+                <div class="mini-stat"><div class="val">⚔️ ${bs.mobs_killed}</div><div class="lbl">Kill</div></div>
+                <div class="mini-stat"><div class="val">📦 ${bs.items_collected}</div><div class="lbl">Item</div></div>
+                <div class="mini-stat"><div class="val">💀 ${bs.death_count}</div><div class="lbl">Ölüm</div></div>
+                <div class="mini-stat"><div class="val">🧪 ${bs.potions_used}</div><div class="lbl">Pot</div></div>
+            </div>
+        ` : `
+            <div style="text-align:center;padding:20px;color:var(--text2);font-size:13px;">Bot verisi henüz gelmedi</div>
+        `}
+
+        <div class="card-meta">
+            <span title="${hwid}">HWID: ${shortHwid}</span>
+            <span>IP: ${u.ip_address || '—'}</span>
+            ${hasBot && bs.uptime_seconds ? `<span>Uptime: ${formatDuration(bs.uptime_seconds)}</span>` : ''}
+            ${hasBot && bs.pos_x ? `<span>Pos: ${Math.round(bs.pos_x)}, ${Math.round(bs.pos_y)}</span>` : ''}
+        </div>
+
+        <div class="card-actions">
+            ${running ? `<button class="btn btn-danger btn-sm" onclick="sendCmd('${hwid}','stop_bot')">⏹ Durdur</button>` :
+                       `<button class="btn btn-success btn-sm" onclick="sendCmd('${hwid}','start_bot')">▶ Başlat</button>`}
+            <button class="btn btn-ghost btn-sm" onclick="sendCmd('${hwid}','restart_bot')">🔄 Yeniden</button>
+            <button class="btn btn-ghost btn-sm" onclick="openMessageModal('${hwid}','${charName}')">💬 Mesaj</button>
+            <button class="btn btn-danger btn-sm" onclick="sendCmd('${hwid}','disconnect')">🔌 Kes</button>
+        </div>
+    </div>`;
+}
+
+async function loadOnlineUsers() {
+    const container = document.getElementById('bot-cards-container');
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2);"><div class="spinner"></div></div>';
+
+    try {
+        const data = await api('GET', '/admin/control/online');
+        const badge = document.getElementById('online-count-badge');
+        badge.textContent = `${data.online_count} çevrimiçi`;
+
+        if (!data.users.length) {
+            container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text2);"><div style="font-size:48px;margin-bottom:12px;">😴</div>Şu an çevrimiçi kullanıcı yok</div>';
+        } else {
+            container.innerHTML = data.users.map(u => renderBotCard(u)).join('');
+        }
+    } catch (e) {
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--red);">❌ ${e.message}</div>`;
+    }
+
+    // Auto-refresh every 3 seconds
+    if (onlineRefreshTimer) clearInterval(onlineRefreshTimer);
+    onlineRefreshTimer = setInterval(() => {
+        if (document.getElementById('page-online').style.display !== 'none' && currentOnlineTab === 'users') {
+            loadOnlineUsers();
+        } else {
+            clearInterval(onlineRefreshTimer);
+            onlineRefreshTimer = null;
+        }
+    }, 3000);
+}
+
+async function loadSessions() {
+    const tbody = document.getElementById('sessions-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="spinner"></div></td></tr>';
+    const hwid = document.getElementById('session-hwid-filter').value.trim();
+
+    try {
+        let url = '/admin/control/sessions?limit=100';
+        if (hwid) url += `&hwid=${encodeURIComponent(hwid)}`;
+        const data = await api('GET', url);
+
+        if (!data.sessions.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="icon">📋</div>Oturum kaydı bulunamadı</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.sessions.map(s => `
+            <tr>
+                <td style="font-size:11px;font-family:monospace;">${s.device_hwid ? (s.device_hwid.length > 16 ? s.device_hwid.substring(0,16)+'…' : s.device_hwid) : '—'}</td>
+                <td>${s.character_name || '—'}</td>
+                <td style="font-size:12px;">${formatDate(s.started_at)}</td>
+                <td style="font-size:12px;">${s.ended_at ? formatDate(s.ended_at) : '—'}</td>
+                <td style="font-size:12px;">${s.duration_seconds ? formatDuration(s.duration_seconds) : '—'}</td>
+                <td style="font-size:12px;">${s.ip_address || '—'}</td>
+                <td>${s.is_active ? '<span class="badge badge-green">🟢 Aktif</span>' : '<span class="badge badge-gray">Kapandı</span>'}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">❌ ${e.message}</td></tr>`;
+    }
+}
+
+async function sendCmd(hwid, action) {
+    try {
+        await api('POST', `/admin/control/command/${encodeURIComponent(hwid)}`, { action, param: '' });
+        toast(`Komut gönderildi: ${action} → ${hwid.substring(0,12)}…`, 'success');
+    } catch (e) {
+        toast('Komut hatası: ' + e.message, 'error');
+    }
+}
+
+function openMessageModal(hwid, charName) {
+    messageTargetHwid = hwid;
+    document.getElementById('message-target-label').textContent = charName || hwid;
+    document.getElementById('single-message').value = '';
+    document.getElementById('message-modal').classList.add('show');
+}
+
+async function doSendSingleMessage() {
+    const msg = document.getElementById('single-message').value.trim();
+    if (!msg) return;
+    try {
+        await api('POST', `/admin/control/message/${encodeURIComponent(messageTargetHwid)}`, { message: msg });
+        toast('Mesaj gönderildi', 'success');
+        closeModal('message-modal');
+    } catch (e) {
+        toast('Mesaj hatası: ' + e.message, 'error');
+    }
+}
+
+function openBroadcastModal() {
+    document.getElementById('broadcast-message').value = '';
+    document.getElementById('broadcast-modal').classList.add('show');
+}
+
+async function doBroadcastMessage() {
+    const msg = document.getElementById('broadcast-message').value.trim();
+    if (!msg) return;
+    try {
+        await api('POST', '/admin/control/broadcast', { action: 'show_message', param: msg });
+        toast('Toplu mesaj gönderildi', 'success');
+        closeModal('broadcast-modal');
+    } catch (e) {
+        toast('Broadcast hatası: ' + e.message, 'error');
+    }
+}
+
+async function confirmStopAll() {
+    if (!confirm('⚠️ Tüm çevrimiçi botlar durdurulacak! Emin misiniz?')) return;
+    try {
+        const r = await api('POST', '/admin/control/stop-all');
+        toast(`${r.target_count} bot durduruldu`, 'success');
+        setTimeout(loadOnlineUsers, 2000);
+    } catch (e) {
+        toast('Hata: ' + e.message, 'error');
+    }
+}
+
+// ── Security Events ──
+async function loadSecurityEvents() {
+    const hours = document.getElementById('security-hours').value;
+    const tbody = document.getElementById('security-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="spinner"></div></td></tr>';
+
+    try {
+        const data = await api('GET', `/admin/security-events?hours=${hours}`);
+        if (!data.events.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="icon">🛡️</div>Güvenlik olayı yok — temiz!</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.events.map(e => `
+            <tr>
+                <td style="font-size:12px;">${formatDate(e.created_at)}</td>
+                <td>${e.event_type}</td>
+                <td><span class="severity-${e.severity}">${e.severity}</span></td>
+                <td style="font-size:11px;">${e.device_hwid || '—'}</td>
+                <td style="font-size:12px;">${e.ip_address || '—'}</td>
+                <td style="font-size:12px; max-width:300px; overflow:hidden; text-overflow:ellipsis;">${e.detail || '—'}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">❌ ${e.message}</td></tr>`;
+    }
+}
+
+// ── Utility ──
+function formatDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        toast('📋 Kopyalandı!', 'success');
+    }).catch(() => {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        toast('📋 Kopyalandı!', 'success');
+    });
+}
+
+function toast(msg, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.textContent = msg;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+}
+</script>
+</body>
+</html>

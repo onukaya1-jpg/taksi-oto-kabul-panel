@@ -1,0 +1,10 @@
+﻿.env
+__pycache__/
+*.pyc
+.pytest_cache/
+data/*.db
+audit_log/
+panel-secrets.txt
+old_keys_export.json
+old_server_keys.json
+.env.template

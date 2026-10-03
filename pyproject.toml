@@ -1,0 +1,56 @@
+[project]
+name = "gamestore-auth-server"
+version = "1.0.0"
+description = "GameStore License & Authentication Server — Ed25519, mTLS, HWID binding"
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "PyNaCl>=1.5.0",
+    "redis>=5.2.0",
+    "aiosqlite>=0.20.0",
+    "asyncpg>=0.30.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "httpx>=0.28.0",
+    "python-dotenv>=1.0.1",
+    "structlog>=24.4.0",
+    "prometheus-client>=0.21.0",
+    "gunicorn>=23.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-httpx>=0.34.0",
+    "coverage>=7.6.0",
+    "bandit>=1.8.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+]
+prod = [
+    "psycopg2-binary>=2.9.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "S", "B", "A", "C4", "UP", "RUF"]
+ignore = ["S101"]  # assert in tests OK
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]

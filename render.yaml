@@ -1,0 +1,59 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Render.com Blueprint — GameStore Auth Server
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Deploy: https://render.com/deploy → Connect GitHub Repo
+# All secrets are set as environment variables in Render Dashboard.
+# NEVER put real secrets in this file!
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+services:
+  - type: web
+    name: gamestore-auth
+    runtime: docker
+    repo: https://github.com/onurtenktr-commits/gamestore-auth-server
+    branch: main
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # --- Server ---
+      - key: ENVIRONMENT
+        value: production
+      - key: PORT
+        value: "8443"
+      - key: WORKERS
+        value: "2"
+      # --- Database (PostgreSQL — set in Render Dashboard!) ---
+      # IMPORTANT: Set DATABASE_URL in Render Dashboard to your Neon.tech PostgreSQL URL
+      # Format: postgresql://user:pass@host/dbname?sslmode=require
+      - key: DATABASE_URL
+        sync: false  # Must be set manually in Render Dashboard (Neon PostgreSQL)
+      # --- Ed25519 Signing Key (PERSISTENT — set in Render Dashboard!) ---
+      - key: ED25519_PRIVATE_KEY_HEX
+        sync: false  # Must be set manually in Render Dashboard
+      - key: ED25519_AUTO_GENERATE
+        value: "false"
+      # --- Admin API Key (set in Render Dashboard!) ---
+      - key: ADMIN_API_KEY
+        sync: false  # Must be set manually in Render Dashboard
+      # --- Command HMAC Secret (set in Render Dashboard!) ---
+      - key: COMMAND_HMAC_SECRET
+        sync: false  # Must be set manually in Render Dashboard — shared secret for command signing
+      # --- Security ---
+      - key: MTLS_ENABLED
+        value: "false"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: RATE_LIMIT_BURST
+        value: "10"
+      - key: TOKEN_TTL_SECONDS
+        value: "300"
+      # --- License Seed (comma-separated keys to create on startup) ---
+      - key: SEED_LICENSE_KEYS
+        sync: false  # Set in Render Dashboard: "KEY1:plan:days,KEY2:plan:days"
+      # --- GitHub Auto-Backup (license persistence across DB resets) ---
+      - key: GITHUB_PAT
+        sync: false  # Set in Render Dashboard — GitHub PAT with repo write scope
+      - key: GITHUB_REPO
+        value: "onurtenktr-commits/gamestore-auth-server"

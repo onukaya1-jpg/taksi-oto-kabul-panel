@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameStore Bot — Admin Control Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a3e 0%, #0d0d2b 100%);
+            border-bottom: 1px solid #2a2a5e;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 {
+            font-size: 20px;
+            color: #7c8dff;
+            font-weight: 600;
+        }
+        .header .status-bar {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 13px;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        .status-dot.green { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+        .status-dot.red { background: #f44336; box-shadow: 0 0 6px #f44336; }
+        .status-dot.yellow { background: #ff9800; box-shadow: 0 0 6px #ff9800; }
+
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .auth-box {
+            background: #1a1a3e;
+            border: 1px solid #2a2a5e;
+            border-radius: 12px;
+            padding: 32px;
+            width: 380px;
+            text-align: center;
+        }
+        .auth-box h2 { color: #7c8dff; margin-bottom: 16px; }
+        .auth-box input {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0d0d2b;
+            border: 1px solid #3a3a6e;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .auth-box button {
+            width: 100%;
+            padding: 10px;
+            background: #7c8dff;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .auth-box button:hover { background: #6a7bef; }
+        .auth-error { color: #f44336; font-size: 12px; margin-top: 8px; }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #12122e;
+            border: 1px solid #2a2a5e;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #7c8dff;
+        }
+        .stat-card .label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #3a3a6e;
+            border-radius: 6px;
+            background: #1a1a3e;
+            color: #e0e0e0;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #2a2a5e; }
+        .btn.danger { border-color: #f44336; color: #f44336; }
+        .btn.danger:hover { background: #f44336; color: #fff; }
+        .btn.primary { background: #7c8dff; border-color: #7c8dff; color: #fff; }
+        .btn.primary:hover { background: #6a7bef; }
+
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 12px;
+        }
+        .user-card {
+            background: #12122e;
+            border: 1px solid #2a2a5e;
+            border-radius: 10px;
+            padding: 16px;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+        .user-card:hover { border-color: #7c8dff; }
+        .user-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .user-card .char-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .user-card .hwid-tag {
+            font-size: 11px;
+            color: #666;
+            font-family: monospace;
+        }
+        .user-card .meta-row {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .user-card .meta-row span { display: flex; align-items: center; gap: 3px; }
+        .bot-state {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .bot-state.attacking { background: #e53935; color: #fff; }
+        .bot-state.looting { background: #ff9800; color: #000; }
+        .bot-state.searching { background: #2196f3; color: #fff; }
+        .bot-state.moving { background: #00bcd4; color: #000; }
+        .bot-state.idle { background: #555; color: #ccc; }
+        .bot-state.paused { background: #7c8dff; color: #fff; }
+        .bot-state.dead { background: #b71c1c; color: #fff; }
+        .bot-state.patrolling { background: #9c27b0; color: #fff; }
+        .bot-state.returning { background: #ffc107; color: #000; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin: 8px 0;
+        }
+        .mini-stat {
+            background: #0d0d2b;
+            border-radius: 4px;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .mini-stat .ms-val { font-size: 14px; font-weight: 700; color: #7c8dff; }
+        .mini-stat .ms-lbl { font-size: 10px; color: #666; }
+        .hp-bar, .mp-bar {
+            height: 6px;
+            border-radius: 3px;
+            margin: 2px 0;
+            background: #1a1a3e;
+            overflow: hidden;
+        }
+        .hp-bar .fill { height: 100%; background: #4caf50; border-radius: 3px; transition: width 0.3s; }
+        .mp-bar .fill { height: 100%; background: #2196f3; border-radius: 3px; transition: width 0.3s; }
+        .bar-label { font-size: 10px; color: #888; display: flex; justify-content: space-between; }
+        .card-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .card-actions .btn { font-size: 11px; padding: 4px 10px; }
+
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #2a2a5e;
+        }
+        .tab-bar .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: #888;
+            border-bottom: 2px solid transparent;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .tab-bar .tab:hover { color: #ccc; }
+        .tab-bar .tab.active { color: #7c8dff; border-bottom-color: #7c8dff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #1a1a3e;
+        }
+        th { color: #888; font-weight: 500; font-size: 11px; text-transform: uppercase; }
+        tr:hover { background: #1a1a3e; }
+        .session-active { color: #4caf50; }
+        .session-ended { color: #888; }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+        .toast.success { background: #1b5e20; color: #fff; }
+        .toast.error { background: #b71c1c; color: #fff; }
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .refresh-timer { font-size: 11px; color: #555; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #555; }
+        .empty-state .emoji { font-size: 40px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+<!-- Auth Overlay -->
+<div class="auth-overlay" id="authOverlay">
+    <div class="auth-box">
+        <h2>Admin Control Panel</h2>
+        <p style="color:#888;font-size:13px;margin-bottom:16px;">API Key ile giris yapin</p>
+        <input type="password" id="apiKeyInput" placeholder="X-Admin-Key" autocomplete="off">
+        <button onclick="doLogin()">Giris</button>
+        <div class="auth-error" id="authError"></div>
+    </div>
+</div>
+
+<!-- Main UI -->
+<div class="header">
+    <h1>GameStore Bot — Control Panel</h1>
+    <div class="status-bar">
+        <span><span class="status-dot green" id="connDot"></span> <span id="connText">Bagli</span></span>
+        <span class="refresh-timer" id="refreshTimer">5s</span>
+    </div>
+</div>
+
+<div class="container" id="mainContent" style="display:none;">
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card"><div class="value" id="statOnline">0</div><div class="label">Cevrimici</div></div>
+        <div class="stat-card"><div class="value" id="statRunning">0</div><div class="label">Bot Calisiyor</div></div>
+        <div class="stat-card"><div class="value" id="statTotalKills">0</div><div class="label">Toplam Kill</div></div>
+        <div class="stat-card"><div class="value" id="statTotalItems">0</div><div class="label">Toplam Item</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('online')">Cevrimici Kullanicilar</div>
+        <div class="tab" onclick="switchTab('sessions')">Oturum Gecmisi</div>
+    </div>
+
+    <!-- Online Users Tab -->
+    <div class="tab-content active" id="tab-online">
+        <div class="toolbar">
+            <button class="btn primary" onclick="refreshOnline()">Yenile</button>
+            <button class="btn danger" onclick="stopAll()">Tum Botlari Durdur</button>
+            <button class="btn" onclick="broadcastMsg()">Toplu Mesaj</button>
+        </div>
+        <div class="user-grid" id="userGrid">
+            <div class="empty-state">
+                <div class="emoji">&#128564;</div>
+                <p>Cevrimici kullanici yok</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sessions Tab -->
+    <div class="tab-content" id="tab-sessions">
+        <div class="toolbar">
+            <button class="btn primary" onclick="refreshSessions()">Yenile</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Durum</th>
+                    <th>HWID</th>
+                    <th>Karakter</th>
+                    <th>Baslangic</th>
+                    <th>Bitis</th>
+                    <th>Sure</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody id="sessionsBody">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let API_KEY = '';
+let BASE = window.location.origin;
+let refreshInterval = null;
+let countdown = 5;
+
+function doLogin() {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (!key) return;
+    API_KEY = key;
+    // Test the key
+    apiFetch('/admin/control/online').then(data => {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        renderOnline(data);
+        startAutoRefresh();
+    }).catch(err => {
+        document.getElementById('authError').textContent = 'Gecersiz API Key';
+    });
+}
+
+document.getElementById('apiKeyInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+});
+
+async function apiFetch(path, method = 'GET', body = null) {
+    const opts = {
+        method,
+        headers: {
+            'X-Admin-Key': API_KEY,
+            'Content-Type': 'application/json',
+        },
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(BASE + path, opts);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+function toast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.tab-content#tab-${name}`).classList.add('active');
+    event.target.classList.add('active');
+    if (name === 'sessions') refreshSessions();
+}
+
+function startAutoRefresh() {
+    countdown = 5;
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(() => {
+        countdown--;
+        document.getElementById('refreshTimer').textContent = countdown + 's';
+        if (countdown <= 0) {
+            countdown = 5;
+            refreshOnline();
+        }
+    }, 1000);
+}
+
+async function refreshOnline() {
+    try {
+        const data = await apiFetch('/admin/control/online');
+        renderOnline(data);
+        document.getElementById('connDot').className = 'status-dot green';
+        document.getElementById('connText').textContent = 'Bagli';
+    } catch (e) {
+        document.getElementById('connDot').className = 'status-dot red';
+        document.getElementById('connText').textContent = 'Baglanti hatasi';
+    }
+}
+
+function renderOnline(data) {
+    const grid = document.getElementById('userGrid');
+    const users = data.users || [];
+
+    document.getElementById('statOnline').textContent = data.online_count || 0;
+
+    let running = 0, totalKills = 0, totalItems = 0;
+    users.forEach(u => {
+        if (u.bot_status && u.bot_status.running) running++;
+        if (u.bot_status) {
+            totalKills += u.bot_status.mobs_killed || 0;
+            totalItems += u.bot_status.items_collected || 0;
+        }
+    });
+    document.getElementById('statRunning').textContent = running;
+    document.getElementById('statTotalKills').textContent = totalKills;
+    document.getElementById('statTotalItems').textContent = totalItems;
+
+    if (users.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><div class="emoji">&#128564;</div><p>Cevrimici kullanici yok</p></div>';
+        return;
+    }
+
+    grid.innerHTML = users.map(u => {
+        const bs = u.bot_status || {};
+        const charName = bs.character_name || 'Bilinmiyor';
+        const state = bs.state || 'idle';
+        const hpPct = bs.max_hp > 0 ? Math.round(bs.hp / bs.max_hp * 100) : 0;
+        const mpPct = bs.max_mp > 0 ? Math.round(bs.mp / bs.max_mp * 100) : 0;
+        const uptime = formatDuration(bs.uptime_seconds || 0);
+        const hwid = u.device_hwid || '';
+        const hwidShort = hwid.substring(0, 12) + '...';
+
+        return `
+        <div class="user-card">
+            <div class="card-header">
+                <div>
+                    <div class="char-name"><span class="status-dot green"></span> ${esc(charName)}</div>
+                    <div class="hwid-tag">${esc(hwidShort)}</div>
+                </div>
+                <span class="bot-state ${state}">${state}</span>
+            </div>
+            <div class="meta-row">
+                <span>&#128273; ${esc(u.license_key || '???')}</span>
+                <span>&#127760; ${esc(u.ip_address || '?')}</span>
+                <span>&#9200; ${uptime}</span>
+            </div>
+            <div class="bar-label"><span>HP</span><span>${bs.hp || 0}/${bs.max_hp || 0}</span></div>
+            <div class="hp-bar"><div class="fill" style="width:${hpPct}%"></div></div>
+            <div class="bar-label"><span>MP</span><span>${bs.mp || 0}/${bs.max_mp || 0}</span></div>
+            <div class="mp-bar"><div class="fill" style="width:${mpPct}%"></div></div>
+            <div class="stats-grid">
+                <div class="mini-stat"><div class="ms-val">${bs.mobs_killed || 0}</div><div class="ms-lbl">Kill</div></div>
+                <div class="mini-stat"><div class="ms-val">${bs.items_collected || 0}</div><div class="ms-lbl">Item</div></div>
+                <div class="mini-stat"><div class="ms-val">${bs.death_count || 0}</div><div class="ms-lbl">Olum</div></div>
+                <div class="mini-stat"><div class="ms-val">${bs.potions_used || 0}</div><div class="ms-lbl">Pot</div></div>
+                <div class="mini-stat"><div class="ms-val">${bs.pos_x || 0},${bs.pos_y || 0}</div><div class="ms-lbl">Konum</div></div>
+                <div class="mini-stat"><div class="ms-val">${u.plan || '?'}</div><div class="ms-lbl">Plan</div></div>
+            </div>
+            <div class="card-actions">
+                <button class="btn" onclick="sendCmd('${esc(hwid)}','stop_bot')">Durdur</button>
+                <button class="btn" onclick="sendCmd('${esc(hwid)}','start_bot')">Baslat</button>
+                <button class="btn" onclick="sendCmd('${esc(hwid)}','restart_bot')">Yeniden</button>
+                <button class="btn" onclick="sendCmd('${esc(hwid)}','disconnect')">Kes</button>
+                <button class="btn" onclick="sendMsg('${esc(hwid)}')">Mesaj</button>
+                <button class="btn danger" onclick="sendCmd('${esc(hwid)}','kill_session')">Kill</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function sendCmd(hwid, action) {
+    try {
+        await apiFetch(`/admin/control/command/${hwid}`, 'POST', { action });
+        toast(`${action} komutu gonderildi`);
+    } catch (e) {
+        toast('Komut gonderilemedi', 'error');
+    }
+}
+
+async function sendMsg(hwid) {
+    const msg = prompt('Mesaj:');
+    if (!msg) return;
+    try {
+        await apiFetch(`/admin/control/message/${hwid}`, 'POST', { message: msg });
+        toast('Mesaj gonderildi');
+    } catch (e) {
+        toast('Mesaj gonderilemedi', 'error');
+    }
+}
+
+async function stopAll() {
+    if (!confirm('Tum botlar durdurulacak. Emin misiniz?')) return;
+    try {
+        const data = await apiFetch('/admin/control/stop-all', 'POST');
+        toast(`${data.target_count} bota durdurma komutu gonderildi`);
+    } catch (e) {
+        toast('Islem basarisiz', 'error');
+    }
+}
+
+async function broadcastMsg() {
+    const msg = prompt('Tum kullanicilara mesaj:');
+    if (!msg) return;
+    try {
+        const data = await apiFetch('/admin/control/broadcast', 'POST', { action: 'show_message', param: msg });
+        toast(`${data.target_count} kullaniciya mesaj gonderildi`);
+    } catch (e) {
+        toast('Broadcast basarisiz', 'error');
+    }
+}
+
+async function refreshSessions() {
+    try {
+        const data = await apiFetch('/admin/control/sessions');
+        const tbody = document.getElementById('sessionsBody');
+        const sessions = data.sessions || [];
+        tbody.innerHTML = sessions.map(s => {
+            const statusClass = s.is_active ? 'session-active' : 'session-ended';
+            const statusText = s.is_active ? '&#9679; Aktif' : '&#9675; Bitti';
+            const dur = s.duration_seconds ? formatDuration(s.duration_seconds) : (s.is_active ? '...' : '-');
+            const started = s.started_at ? new Date(s.started_at).toLocaleString('tr-TR') : '-';
+            const ended = s.ended_at ? new Date(s.ended_at).toLocaleString('tr-TR') : '-';
+            return `<tr>
+                <td class="${statusClass}">${statusText}</td>
+                <td style="font-family:monospace;font-size:11px">${esc((s.device_hwid || '').substring(0, 16))}...</td>
+                <td>${esc(s.character_name || '-')}</td>
+                <td>${started}</td>
+                <td>${ended}</td>
+                <td>${dur}</td>
+                <td>${esc(s.ip_address || '-')}</td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        toast('Oturum listesi alinamadi', 'error');
+    }
+}
+
+function formatDuration(sec) {
+    if (!sec || sec < 0) return '0s';
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return `${h}sa ${m}dk`;
+    if (m > 0) return `${m}dk ${s}sn`;
+    return `${s}sn`;
+}
+
+function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+}
+</script>
+</body>
+</html>
